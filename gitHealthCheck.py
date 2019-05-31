@@ -5,10 +5,7 @@ from datetime import datetime
 import argparse
 import sys
 import base64
-
-
-
-
+import re
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-url", "--baseurl", required=True, help="Provide git repository base url")
@@ -50,6 +47,19 @@ try:
         #for branch in branches_list:
             #print('    branch:' + branch)
             print('    branch:' + branches_list[i])
+            
+            # Check branch name
+            if branches_list[i].upper() == 'MASTER':
+                print("        + You have a master ;) ")
+            elif branches_list[i].upper() == 'DEVELOPMENT' or branches_list[i].upper() == 'RELEASE':
+                print("        - Hummm... you shouldn't be using this ;( ")
+            else:
+                pattern = 'feature/[A-Z]\w+-[0-9]\w+'
+                if re.match(pattern, branches_list[i]):
+                    print("        - Nice branch name, i like it ;)")
+                else:
+                    print("        - Don't know if I like your branch name that much  ;(")              
+
             response = requests.get('https://bitbucketglobal.experian.local/rest/api/1.0/projects/GVAPUS/repos/'+repo+'/commits/' + latestCommit_list[i], headers=headers, params=(('limit', '1'),))
             #print(response.content)
             response_jsondata = json.loads(response.content, encoding=None)
@@ -58,7 +68,7 @@ try:
             #print(strDate)
             #[0:9]
             dt_object = datetime.fromtimestamp(strDate)
-            print('        authorTimestamp:' + str(dt_object))
+            #print('        authorTimestamp:' + str(dt_object))
 
 except requests.exceptions.RequestException as e: 
     print e
