@@ -12,6 +12,7 @@ ap.add_argument("-url", "--baseurl", required=True, help="Provide git repository
 ap.add_argument("-u", "--user", required=True, help="User")
 ap.add_argument("-p", "--password", required=True, help="Password")
 ap.add_argument("-pr", "--project", required=True, help="Project name")
+ap.add_argument("-r", "--repo", required=False, help="Repository name")
 
 args = vars(ap.parse_args())
 
@@ -24,8 +25,17 @@ params = (
     ('limit', '100'),
 )
 
+reponame =''
+
 try:
-    response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/', headers=headers, params=params)
+    print('>>> git Health Check <<<') 
+    if args['repo']:
+        print('>> Analizing project :' + args['project'] + ' | repo: ' + args['repo']) 
+        reponame = args['repo']
+    else:
+        print('>> Analizing all repositories in project :' + args['project']) 
+
+    response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
     #print(response)
     #print(response.content)
     response_jsondata = json.loads(response.content, encoding=None)
@@ -33,7 +43,7 @@ try:
     #print(repos_list)
 
     for repo in repos_list: 
-        response = requests.get('https://bitbucketglobal.experian.local/rest/api/1.0/projects/GVAPUS/repos/'+repo+'/branches', headers=headers, params=params)
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=params)
         print('repo:' + repo) 
         #print(response.content)
         response_jsondata = json.loads(response.content, encoding=None)
@@ -60,7 +70,7 @@ try:
                 else:
                     print("        - Don't know if I like your branch name that much  ;(")              
 
-            response = requests.get('https://bitbucketglobal.experian.local/rest/api/1.0/projects/GVAPUS/repos/'+repo+'/commits/' + latestCommit_list[i], headers=headers, params=(('limit', '1'),))
+            response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/commits/' + latestCommit_list[i], headers=headers, params=(('limit', '1'),))
             #print(response.content)
             response_jsondata = json.loads(response.content, encoding=None)
             authorTimestamp = nested_lookup('authorTimestamp', response_jsondata)
