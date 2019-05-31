@@ -36,48 +36,38 @@ try:
         print('>> Analizing all repositories in project :' + args['project']) 
 
     response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
-    #print(response)
-    #print(response.content)
     response_jsondata = json.loads(response.content, encoding=None)
     repos_list = nested_lookup('slug', response_jsondata)
-    #print(repos_list)
 
     for repo in repos_list: 
-        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=params)
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
         print('repo:' + repo) 
-        #print(response.content)
         response_jsondata = json.loads(response.content, encoding=None)
-        branches_list = nested_lookup('displayId', response_jsondata)
-        latestCommit_list = nested_lookup('latestCommit', response_jsondata)
-        #print(branches_list)
-        #print(latestCommit_list)
 
+        branches = response_jsondata['values']
+        print(branches)
+        for branch in branches:
+            print(branch['displayId'])
 
-        for i in range(len(branches_list)):
-        #for branch in branches_list:
-            #print('    branch:' + branch)
-            print('    branch:' + branches_list[i])
-            
-            # Check branch name
-            if branches_list[i].upper() == 'MASTER':
+            if branch['displayId'].upper() == 'MASTER':
                 print("        + You have a master ;) ")
-            elif branches_list[i].upper() == 'DEVELOPMENT' or branches_list[i].upper() == 'RELEASE':
+            elif branch['displayId'].upper() == 'DEVELOPMENT' or branch['displayId'].upper() == 'RELEASE':
                 print("        - Hummm... you shouldn't be using this ;( ")
             else:
                 pattern = 'feature/[A-Z]\w+-[0-9]\w+'
-                if re.match(pattern, branches_list[i]):
+                if re.match(pattern, branch['displayId']):
                     print("        - Nice branch name, i like it ;)")
                 else:
                     print("        - Don't know if I like your branch name that much  ;(")              
-
-            response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/commits/' + latestCommit_list[i], headers=headers, params=(('limit', '1'),))
+            
+            #response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches/' + branch['displayId'], headers=headers, params=(('limit', '1'),('details', 'true'),))
             #print(response.content)
-            response_jsondata = json.loads(response.content, encoding=None)
-            authorTimestamp = nested_lookup('authorTimestamp', response_jsondata)
-            strDate = authorTimestamp[0]/1000 # remove last 3 zeros from timestamp value
+            #authorTimestamp = nested_lookup('authorTimestamp', response_jsondata)
+            print(branch['metadata'])
+            #strDate = branch['authorTimestamp']/1000 # remove last 3 zeros from timestamp value
             #print(strDate)
             #[0:9]
-            dt_object = datetime.fromtimestamp(strDate)
+            #dt_object = datetime.fromtimestamp(strDate)
             #print('        authorTimestamp:' + str(dt_object))
 
 except requests.exceptions.RequestException as e: 
