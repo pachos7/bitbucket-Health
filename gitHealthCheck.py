@@ -58,7 +58,9 @@ try:
             # Review associated Pull Requests status
             try: 
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
-                    print('        Merged branches *MUST* be deleted :rage: ')
+                    userEmail = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['author']['user']['emailAddress']
+                    print('        @' + userEmail +' Merged branches *MUST* be deleted :rage: ')
+
             except KeyError:
                 pass
 
@@ -81,6 +83,7 @@ try:
                 else:
                     message += "        Don't know if I like your branch name that much  :thumbsdown:"
             
+            # Add branch age information 
             if ageDays > 365:
                 message += ". about deleting this bro!  :skull:"
             elif ageDays > 180:
