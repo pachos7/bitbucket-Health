@@ -48,7 +48,8 @@ def findUserInList(userID, usersList):
     return None 
 
 def bitbucketDate(bitbucketDate):
-    return datetime.date.fromtimestamp(strDate/1000)
+    strDate = bitbucketDate/1000 # remove last 3 zeros from timestamp value
+    return datetime.date.fromtimestamp(strDate)
 
 headers = {
     'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
