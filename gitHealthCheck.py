@@ -42,7 +42,7 @@ class user:
 
 def findUserInList(userID, usersList):
     for thisUser in usersList:
-        if thisUserEmail in thisUser.userID:
+        if userID in thisUser.userID:
             return thisUser
 
     return None 
@@ -79,6 +79,21 @@ try:
         print(':( Sorry no repository foung with that name :' + args['project'] + '/' + args['repo'])
          
     for repo in repos_list: 
+        # Review users commits activity in branch
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/commits', headers=headers, params=(('limit', '100'),('details', 'true'),))
+        response_jsondata = json.loads(response.content, encoding=None)
+        print(response.content)
+        commits = response_jsondata['values']
+        for thisCommit in commits:
+            thisUser = findUserInList(thisCommit["author"]["emailAddress"], usersList)
+            if  thisUser == None:
+                usersList.append(user(thisCommit["author"]["emailAddress"]))
+                usersList[len(usersList) - 1].addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
+            else:
+                thisUser.addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
+
+
+
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
         print('\n repo: *' + repo + '*') 
         response_jsondata = json.loads(response.content, encoding=None)
@@ -137,10 +152,7 @@ try:
             except KeyError:
                 pass
 
-            # Review users commits activity in branch
-            response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
-            print('\n repo: *' + repo + '*') 
-            response_jsondata = json.loads(response.content, encoding=None)
+
 
     for user in usersList:
         user.printUserDetails()
