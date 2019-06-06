@@ -88,9 +88,7 @@ try:
         for branch in branches:
 
             #print(branch['metadata'])
-            strDate = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp']/1000 # remove last 3 zeros from timestamp value
-            dt_object = datetime.date.fromtimestamp(strDate)
-            ageDays = (datetime.date.today() - dt_object).days
+            ageDays = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
             print('    branch: *' + branch['displayId'] + '* updated ' + str(ageDays) + ' days ago)')
 
             message = ""
@@ -138,6 +136,11 @@ try:
                     print('        @' + thisUserEmail +' Merged branches *MUST* be deleted :rage: ')
             except KeyError:
                 pass
+
+            # Review users commits activity in branch
+            response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
+            print('\n repo: *' + repo + '*') 
+            response_jsondata = json.loads(response.content, encoding=None)
 
     for user in usersList:
         user.printUserDetails()
