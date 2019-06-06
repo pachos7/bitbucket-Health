@@ -1,7 +1,6 @@
 import requests
 import json
 from nested_lookup import nested_lookup
-#from datetime import datetime
 import datetime
 import argparse
 import sys
@@ -17,6 +16,40 @@ ap.add_argument("-r", "--repo", required=False, help="Repository name")
 
 args = vars(ap.parse_args())
 
+class activity:
+    def __init__(self, id, kind, repo=None, branch=None, date=None):
+        self.id     = id
+        self.kind   = kind
+        self.repo   = repo
+        self.branch = branch
+        self.date   = date 
+
+class user:
+    def __init__(self, userID):
+        self.userID = userID
+        self.activities = []
+
+    def addActivity(self, activity):
+        self.activities.append(activity)
+
+    def printActivities(self):
+        for thisActivity in self.activities:
+            print(str(thisActivity.date) + ':' + str(thisActivity.repo) + ':' + str(thisActivity.branch) + ':' + str(thisActivity.id) + ':' + thisActivity.kind)
+
+    def printUserDetails(self):
+        print(self.userID)
+        self.printActivities()
+
+def findUserInList(userID, usersList):
+    for thisUser in usersList:
+        if thisUserEmail in thisUser.userID:
+            return thisUser
+
+    return None 
+
+def bitbucketDate(bitbucketDate):
+    return datetime.date.fromtimestamp(strDate/1000)
+
 headers = {
     'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
     'Content-Type': 'application/json',
@@ -27,6 +60,7 @@ params = (
 )
 
 reponame =''
+usersList =[]
 
 try:
     print('>>> git Health Check <<<') 
@@ -88,12 +122,24 @@ try:
 
             # Review associated Pull Requests status
             try: 
+                thisPullRequest = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']
+                #print(thisPullRequest)
+                thisUserEmail = thisPullRequest['author']['user']['emailAddress']
+                
+                thisUser = findUserInList(thisUserEmail, usersList)
+                if  thisUser == None:
+                    usersList.append(user(thisUserEmail))
+                    usersList[len(usersList) - 1].addActivity(activity(thisPullRequest["id"],"Pull Request Creator", repo, branch['displayId'], bitbucketDate(thisPullRequest["createdDate"])))
+                else:
+                    thisUser.addActivity(activity(thisPullRequest["id"],"Pull Request Creator", repo, branch['displayId'], bitbucketDate(thisPullRequest["createdDate"])))
+        
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
-                    userEmail = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['author']['user']['emailAddress']
-                    print('        @' + userEmail +' Merged branches *MUST* be deleted :rage: ')
-
+                    print('        @' + thisUserEmail +' Merged branches *MUST* be deleted :rage: ')
             except KeyError:
                 pass
+
+    for user in usersList:
+        user.printUserDetails()
 
 except requests.exceptions.RequestException as e: 
     print e
