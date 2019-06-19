@@ -1,3 +1,6 @@
+# Example python gitHealthCheck.py -url https://bitbucketglobal.experian.local/ -u cc046fn -p 'abc123' -pr GVAPUS -r PINNING
+# Example python gitHealthCheck.py -url https://bitbucketglobal.experian.local/ -u cc046fn -p 'abc123' -pr RGPM -r expn-cis-hermes
+
 import requests
 import json
 from nested_lookup import nested_lookup
@@ -66,17 +69,17 @@ usersList =[]
 try:
     print('>>> git Health Check <<<') 
     if args['repo']:
-        print('>> Analizing project :' + args['project'] + ' | repo: ' + args['repo']) 
+        print('>> Analizing project :' + str(args['project']) + ' | repo: ' + str(args['repo'])) 
         reponame = args['repo']
     else:
-        print('>> Analizing all repositories in project :' + args['project']) 
+        print('>> Analizing all repositories in project :' + str(args['project'])) 
 
     response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
     response_jsondata = json.loads(response.content, encoding=None)
     repos_list = nested_lookup('slug', response_jsondata)
 
     if len(repos_list) == 0:
-        print(':( Sorry no repository foung with that name :' + args['project'] + '/' + args['repo'])
+        print(':( Sorry no repository foung with that name: ' + str(args['project']) + '/' + str(args['repo']))
          
     for repo in repos_list: 
         # Review users commits activity in branch
