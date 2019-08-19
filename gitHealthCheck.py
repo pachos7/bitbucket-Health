@@ -1,7 +1,9 @@
+# Example python gitHealthCheck.py -url https://bitbucketglobal.experian.local/ -u cc046fn -p 'abc123' -pr GVAPUS -r PINNING
+# Example python gitHealthCheck.py -url https://bitbucketglobal.experian.local/ -u cc046fn -p 'abc123' -pr RGPM -r expn-cis-hermes
+
 import requests
 import json
 from nested_lookup import nested_lookup
-#from datetime import datetime
 import datetime
 import argparse
 import sys
@@ -17,6 +19,41 @@ ap.add_argument("-r", "--repo", required=False, help="Repository name")
 
 args = vars(ap.parse_args())
 
+class activity:
+    def __init__(self, id, kind, repo=None, branch=None, date=None):
+        self.id     = id
+        self.kind   = kind
+        self.repo   = repo
+        self.branch = branch
+        self.date   = date 
+
+class user:
+    def __init__(self, userID):
+        self.userID = userID
+        self.activities = []
+
+    def addActivity(self, activity):
+        self.activities.append(activity)
+
+    def printActivities(self):
+        for thisActivity in self.activities:
+            print('    ' + str(thisActivity.date) + ':' + str(thisActivity.repo) + ':' + str(thisActivity.branch) + ':' + str(thisActivity.id) + ':' + thisActivity.kind)
+
+    def printUserDetails(self):
+        print(self.userID)
+        self.printActivities()
+
+def findUserInList(userID, usersList):
+    for thisUser in usersList:
+        if userID in thisUser.userID:
+            return thisUser
+
+    return None 
+
+def bitbucketDate(bitbucketDate):
+    strDate = bitbucketDate/1000 # remove last 3 zeros from timestamp value
+    return datetime.date.fromtimestamp(strDate)
+
 headers = {
     'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
     'Content-Type': 'application/json',
@@ -27,23 +64,37 @@ params = (
 )
 
 reponame =''
+usersList =[]
 
 try:
     print('>>> git Health Check <<<') 
     if args['repo']:
-        print('>> Analizing project :' + args['project'] + ' | repo: ' + args['repo']) 
+        print('>> Analizing project :' + str(args['project']) + ' | repo: ' + str(args['repo'])) 
         reponame = args['repo']
     else:
-        print('>> Analizing all repositories in project :' + args['project']) 
+        print('>> Analizing all repositories in project :' + str(args['project'])) 
 
     response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
     response_jsondata = json.loads(response.content, encoding=None)
     repos_list = nested_lookup('slug', response_jsondata)
 
     if len(repos_list) == 0:
-        print(':( Sorry no repository foung with that name :' + args['project'] + '/' + args['repo'])
+        print(':( Sorry no repository foung with that name: ' + str(args['project']) + '/' + str(args['repo']))
          
     for repo in repos_list: 
+        # Review users commits activity in branch
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/commits', headers=headers, params=(('limit', '100'),('details', 'true'),))
+        response_jsondata = json.loads(response.content, encoding=None)
+        # print(response.content)
+        commits = response_jsondata['values']
+        for thisCommit in commits:
+            thisUser = findUserInList(thisCommit["author"]["emailAddress"], usersList)
+            if  thisUser == None:
+                usersList.append(user(thisCommit["author"]["emailAddress"]))
+                usersList[len(usersList) - 1].addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
+            else:
+                thisUser.addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
+
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
         print('\n repo: *' + repo + '*') 
         response_jsondata = json.loads(response.content, encoding=None)
@@ -53,9 +104,7 @@ try:
         for branch in branches:
 
             #print(branch['metadata'])
-            strDate = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp']/1000 # remove last 3 zeros from timestamp value
-            dt_object = datetime.date.fromtimestamp(strDate)
-            ageDays = (datetime.date.today() - dt_object).days
+            ageDays = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
             print('    branch: *' + branch['displayId'] + '* updated ' + str(ageDays) + ' days ago)')
 
             message = ""
@@ -82,18 +131,30 @@ try:
                 message += ". I see some spiderwebs, 6 months and you have not worked on this, take a look.  :("
             elif ageDays > 90:
                 message += ". Forgot about this? 3 months ago it was important, how about now?  :("
-            else:
-                message += ". I see you're active on this. "
             print(message)
 
             # Review associated Pull Requests status
             try: 
+                thisPullRequest = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']
+                #print(thisPullRequest)
+                thisUserEmail = thisPullRequest['author']['user']['emailAddress']
+                
+                thisUser = findUserInList(thisUserEmail, usersList)
+                if  thisUser == None:
+                    usersList.append(user(thisUserEmail))
+                    usersList[len(usersList) - 1].addActivity(activity(thisPullRequest["id"],"Pull Request Creator", repo, branch['displayId'], bitbucketDate(thisPullRequest["createdDate"])))
+                else:
+                    thisUser.addActivity(activity(thisPullRequest["id"],"Pull Request Creator", repo, branch['displayId'], bitbucketDate(thisPullRequest["createdDate"])))
+        
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
-                    userEmail = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['author']['user']['emailAddress']
-                    print('        @' + userEmail +' Merged branches *MUST* be deleted :rage: ')
-
+                    print('        @' + thisUserEmail +' Merged branches *MUST* be deleted :rage: ')
             except KeyError:
                 pass
+
+    print('\n\n >> Users Activity details \n')
+    for user in usersList:
+        user.printUserDetails()
+        print('\n')
 
 except requests.exceptions.RequestException as e: 
     print e
