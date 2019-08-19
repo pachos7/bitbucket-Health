@@ -37,7 +37,7 @@ class user:
 
     def printActivities(self):
         for thisActivity in self.activities:
-            print(str(thisActivity.date) + ':' + str(thisActivity.repo) + ':' + str(thisActivity.branch) + ':' + str(thisActivity.id) + ':' + thisActivity.kind)
+            print('    ' + str(thisActivity.date) + ':' + str(thisActivity.repo) + ':' + str(thisActivity.branch) + ':' + str(thisActivity.id) + ':' + thisActivity.kind)
 
     def printUserDetails(self):
         print(self.userID)
@@ -85,7 +85,7 @@ try:
         # Review users commits activity in branch
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/commits', headers=headers, params=(('limit', '100'),('details', 'true'),))
         response_jsondata = json.loads(response.content, encoding=None)
-        print(response.content)
+        # print(response.content)
         commits = response_jsondata['values']
         for thisCommit in commits:
             thisUser = findUserInList(thisCommit["author"]["emailAddress"], usersList)
@@ -94,8 +94,6 @@ try:
                 usersList[len(usersList) - 1].addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
             else:
                 thisUser.addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
-
-
 
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
         print('\n repo: *' + repo + '*') 
@@ -133,8 +131,6 @@ try:
                 message += ". I see some spiderwebs, 6 months and you have not worked on this, take a look.  :("
             elif ageDays > 90:
                 message += ". Forgot about this? 3 months ago it was important, how about now?  :("
-            else:
-                message += ". I see you're active on this. "
             print(message)
 
             # Review associated Pull Requests status
@@ -155,10 +151,10 @@ try:
             except KeyError:
                 pass
 
-
-
+    print('\n\n >> Users Activity details \n')
     for user in usersList:
         user.printUserDetails()
+        print('\n')
 
 except requests.exceptions.RequestException as e: 
     print e
