@@ -54,6 +54,19 @@ def bitbucketDate(bitbucketDate):
     strDate = bitbucketDate/1000 # remove last 3 zeros from timestamp value
     return datetime.date.fromtimestamp(strDate)
 
+class branchObj:
+    def __init__(self, name):
+        self.name = name
+        self.age = 0
+        self.message = ""
+        self.status = ""
+
+    def printBranchDetails(self):
+        print(self.name)
+        print('    Age: ' + str(self.age) + ' days')
+        print('    Message: ' + self.message)
+
+
 headers = {
     'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
     'Content-Type': 'application/json',
@@ -65,6 +78,7 @@ params = (
 
 reponame =''
 usersList =[]
+branchList = []
 
 try:
     print('>>> git Health Check <<<') 
@@ -102,36 +116,33 @@ try:
 
         branches = response_jsondata['values']
         for branch in branches:
-
             #print(branch['metadata'])
-            ageDays = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
-            print('    branch: *' + branch['displayId'] + '* updated ' + str(ageDays) + ' days ago)')
-
-            message = ""
+            thisBranchOjb = branchObj(branch['displayId'])
+            branchList.append(thisBranchOjb);
+            thisBranchOjb.age = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
 
             # Check Branch Naming conventions
-            if branch['displayId'].upper() == 'MASTER':
-                message = "        + You have a master" 
+            if thisBranchOjb.name.upper() == 'MASTER':
+                thisBranchOjb.message = "        + You have a master" 
                 if str(branch['isDefault']) == "True":
-                    message+= " and is set as default branch :thumbsup: "
+                    thisBranchOjb.message+= " and is set as default branch :thumbsup: "
                 else:
-                    message+= "but is NOT your default branch :rage: "
+                    thisBranchOjb.message+= "but is NOT your default branch :rage: "
             
             elif branch['displayId'].upper() == 'DEVELOPMENT' or branch['displayId'].upper() == 'RELEASE' or branch['displayId'].upper() == 'INTEGRATION':
-                message = "        Hummm... you shouldn't be using this branch name :broken_heart: "
+                thisBranchOjb.message = "        Hummm... you shouldn't be using this branch name :broken_heart: "
             else:
                 pattern = 'feature/[A-Z]\w+-[0-9]\w+'
                 if not(re.match(pattern, branch['displayId'])):
-                    message += "        Don't like your branch name that much  :thumbsdown:"
+                    thisBranchOjb.message += "        Don't like your branch name that much  :thumbsdown:"
             
             # Add branch age information 
-            if ageDays > 365:
-                message += ". Think about deleting this bro!  :skull:"
-            elif ageDays > 180:
-                message += ". I see some spiderwebs, 6 months and you have not worked on this, take a look.  :("
-            elif ageDays > 90:
-                message += ". Forgot about this? 3 months ago it was important, how about now?  :("
-            print(message)
+            if thisBranchOjb.age > 365:
+                thisBranchOjb.message += ". Think about deleting this bro!  :skull:"
+            elif thisBranchOjb.age > 180:
+                thisBranchOjb.message += ". I see some spiderwebs, 6 months and you have not worked on this, take a look.  :("
+            elif thisBranchOjb.age > 90:
+                thisBranchOjb.message += ". Forgot about this? 3 months ago it was important, how about now?  :("
 
             # Review associated Pull Requests status
             try: 
@@ -147,9 +158,18 @@ try:
                     thisUser.addActivity(activity(thisPullRequest["id"],"Pull Request Creator", repo, branch['displayId'], bitbucketDate(thisPullRequest["createdDate"])))
         
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
-                    print('        @' + thisUserEmail +' Merged branches *MUST* be deleted :rage: ')
+                    thisBranchOjb.message += '        @' + thisUserEmail +' Merged branches *MUST* be deleted :rage: '
+                    thisBranchOjb.status = 'Obsolete'
             except KeyError:
                 pass
+
+    print('\n\n >> Repo details \n')
+    print('    Branches: + ' + str(len(branchList)))
+    
+    print('\n\n >> Branches details \n')
+    for branch in branchList:
+        branch.printBranchDetails()
+        print('\n')
 
     print('\n\n >> Users Activity details \n')
     for user in usersList:
