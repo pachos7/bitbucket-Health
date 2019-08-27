@@ -102,9 +102,9 @@ try:
         # print(response.content)
         commits = response_jsondata['values']
         for thisCommit in commits:
-            thisUser = findUserInList(thisCommit["author"]["emailAddress"], usersList)
+            thisUser = findUserInList(thisCommit["author"]["emailAddress"].upper(), usersList)
             if  thisUser == None:
-                usersList.append(user(thisCommit["author"]["emailAddress"]))
+                usersList.append(user(thisCommit["author"]["emailAddress"].upper()))
                 usersList[len(usersList) - 1].addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
             else:
                 thisUser.addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
@@ -148,7 +148,7 @@ try:
             try: 
                 thisPullRequest = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']
                 #print(thisPullRequest)
-                thisUserEmail = thisPullRequest['author']['user']['emailAddress']
+                thisUserEmail = thisPullRequest['author']['user']['emailAddress'].upper()
                 
                 thisUser = findUserInList(thisUserEmail, usersList)
                 if  thisUser == None:
@@ -171,7 +171,7 @@ try:
         branch.printBranchDetails()
         print('\n')
 
-    print('\n\n >> Users Activity details \n')
+    print('\n\n >> Recent users Activity details (last 100 commits)\n')
     for user in usersList:
         user.printUserDetails()
         print('\n')
