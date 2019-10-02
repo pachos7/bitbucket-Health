@@ -62,9 +62,7 @@ class branchObj:
         self.status = ""
 
     def printBranchDetails(self):
-        print(self.name)
-        print('    Age: ' + str(self.age) + ' days')
-        print('    Message: ' + self.message)
+        print(self.name + ' | Age: ' + str(self.age) + ' days | Message: ' + self.message)
 
 
 headers = {
@@ -93,9 +91,12 @@ try:
     repos_list = nested_lookup('slug', response_jsondata)
 
     if len(repos_list) == 0:
-        print(':( Sorry no repository foung with that name: ' + str(args['project']) + '/' + str(args['repo']))
+        print(':( Sorry no repository found with that name: ' + str(args['project']) + '/' + str(args['repo']))
          
     for repo in repos_list: 
+        Health = 7
+        oldBranchesCount = 0
+        activeBranchesCount = len(branchList)
         # Review users commits activity in branch
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/commits', headers=headers, params=(('limit', '100'),('details', 'true'),))
         response_jsondata = json.loads(response.content, encoding=None)
@@ -123,26 +124,32 @@ try:
 
             # Check Branch Naming conventions
             if thisBranchOjb.name.upper() == 'MASTER':
-                thisBranchOjb.message = "        + You have a master" 
+                thisBranchOjb.message = "You have a master" 
                 if str(branch['isDefault']) == "True":
                     thisBranchOjb.message+= " and is set as default branch :thumbsup: "
+                    Health += 1
                 else:
                     thisBranchOjb.message+= "but is NOT your default branch :rage: "
             
             elif branch['displayId'].upper() == 'DEVELOPMENT' or branch['displayId'].upper() == 'RELEASE' or branch['displayId'].upper() == 'INTEGRATION':
-                thisBranchOjb.message = "        Hummm... you shouldn't be using this branch name :broken_heart: "
+                thisBranchOjb.message = "Hummm... you shouldn't be using this branch name :broken_heart: "
+                Health -= 1
             else:
                 pattern = 'feature/[A-Z]\w+-[0-9]\w+'
                 if not(re.match(pattern, branch['displayId'])):
-                    thisBranchOjb.message += "        Don't like your branch name that much  :thumbsdown:"
+                    thisBranchOjb.message += "Don't like your branch name that much  :thumbsdown:"
             
             # Add branch age information 
-            if thisBranchOjb.age > 365:
-                thisBranchOjb.message += ". Think about deleting this bro!  :skull:"
-            elif thisBranchOjb.age > 180:
-                thisBranchOjb.message += ". I see some spiderwebs, 6 months and you have not worked on this, take a look.  :("
-            elif thisBranchOjb.age > 90:
-                thisBranchOjb.message += ". Forgot about this? 3 months ago it was important, how about now?  :("
+            if thisBranchOjb.name.upper() <> 'MASTER':
+                if thisBranchOjb.age > 365:
+                    thisBranchOjb.message += ". Think about deleting this bro!  :skull:"
+                elif thisBranchOjb.age > 180:
+                    thisBranchOjb.message += ". I see some spiderwebs, 6 months and you have not worked on this, take a look.  :("
+                elif thisBranchOjb.age > 90:
+                    thisBranchOjb.message += ". Forgot about this? 3 months ago it was important, how about now?  :("
+                    oldBranchesCount += 1
+                else:
+                    activeBranchesCount += 1
 
             # Review associated Pull Requests status
             try: 
@@ -158,18 +165,23 @@ try:
                     thisUser.addActivity(activity(thisPullRequest["id"],"Pull Request Creator", repo, branch['displayId'], bitbucketDate(thisPullRequest["createdDate"])))
         
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
-                    thisBranchOjb.message += '        @' + thisUserEmail +' Merged branches *MUST* be deleted :rage: '
+                    thisBranchOjb.message += '@' + thisUserEmail +' Merged branches *MUST* be deleted :rage: '
                     thisBranchOjb.status = 'Obsolete'
             except KeyError:
                 pass
+        
+        if activeBranchesCount <= 5:
+            Health += 1
+        else:
+            Health -= 1
 
     print('\n\n >> Repo details \n')
-    print('    Branches: + ' + str(len(branchList)))
+    print('    Health(' + str(Health) +'): [' + '*' * Health + ' ' * (10 - Health) + ']')
+    print('    Branches: ' + str(activeBranchesCount + oldBranchesCount) + ' [' + str(activeBranchesCount) + ' active / ' + str(oldBranchesCount) + ' old]')
     
     print('\n\n >> Branches details \n')
     for branch in branchList:
         branch.printBranchDetails()
-        print('\n')
 
     print('\n\n >> Recent users Activity details (last 100 commits)\n')
     for user in usersList:
