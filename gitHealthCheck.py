@@ -181,6 +181,7 @@ try:
                     thisUser.addActivity(activity(thisPullRequest["id"],"Pull Request Creator", repo, branch['displayId'], bitbucketDate(thisPullRequest["createdDate"])))
         
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
+                    thisRepoOjb.modifyHealth(-2, str("Merged branches MUST be deleted " + thisBranchOjb.name))
                     thisBranchOjb.message += '@' + thisUserEmail +' Merged branches *MUST* be deleted :rage: '
                     thisBranchOjb.status = 'Obsolete'
             except KeyError:
