@@ -1,6 +1,3 @@
-# Example python gitHealthCheck.py -url https://bitbucketglobal.experian.local/ -u cc046fn -p 'abc123' -pr GVAPUS -r PINNING
-# Example python gitHealthCheck.py -url https://bitbucketglobal.experian.local/ -u cc046fn -p 'abc123' -pr RGPM -r expn-cis-hermes
-
 import requests
 import json
 from nested_lookup import nested_lookup
@@ -80,20 +77,19 @@ class repoObj:
         self.healthMessages.append(['{0:+}'.format(healthModifier) , healthMessage])
 
     def printRepoDetails(self):
-        print('>> Repo ' + self.name + ' details.\n')
+        print('>> Repo ' + self.name + ' details.')
         print('    Health(' + str(self.health) +'): [' + '*' * self.health + ' ' * (10 - self.health) + ']')
         print('    Branches: ' + str(self.activeBranchesCount + self.oldBranchesCount) + ' [' + str(self.activeBranchesCount) + ' active / ' + str(self.oldBranchesCount) + ' old]')
         for message in self.healthMessages:
             print('    ' + str(message))
+        print('\n')
 
 headers = {
     'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
     'Content-Type': 'application/json',
 }
 
-params = (
-    ('limit', '100'),
-)
+params = (('limit', '100'),)
 
 reponame =''
 usersList =[]
@@ -134,8 +130,8 @@ try:
         # *********************************************************************************************************
         # Branches Analysis
         # *********************************************************************************************************
-        #activeBranchesCount = len(branchList)
-        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
+        maxBranchesLimit = 200
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', maxBranchesLimit),('details', 'true'),))
         response_jsondata = json.loads(response.content, encoding=None)
         #print(response.content)
 
@@ -143,16 +139,21 @@ try:
         for branch in branches:
             #print(branch['metadata'])
             thisBranchOjb = branchObj(branch['displayId'])
-            branchList.append(thisBranchOjb);
-            thisBranchOjb.age = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
+            branchList.append(thisBranchOjb)
+            print(branch['displayId'])
+            try:
+                thisBranchOjb.age = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
+            except:
+                thisBranchOjb.age = 9999
 
+            unwantedBranchNamesPattern = "(Development|Dev|Release|Integration|Prod|bugfix/.*|Hotfix/.*|Release/.*)"
             # Check Branch Naming conventions
             if thisBranchOjb.name.upper() == 'MASTER':
                 if str(branch['isDefault']) == "True":
                     thisRepoOjb.modifyHealth(+1, "You have a master branch set as default")
             
-            elif branch['displayId'].upper() == 'DEVELOPMENT' or branch['displayId'].upper() == 'RELEASE' or branch['displayId'].upper() == 'INTEGRATION':
-                thisRepoOjb.modifyHealth(-1, str("You shouldn't be using branch name: " + branch['displayId']))
+            elif (re.match(unwantedBranchNamesPattern, branch['displayId'], re.IGNORECASE)):
+                thisRepoOjb.modifyHealth(-1, str('You shouldnt be using branch name: ' + branch['displayId']))
 #            else:
 #                pattern = 'feature/[A-Z]\w+-[0-9]\w+'
 #                if not(re.match(pattern, branch['displayId'])):
@@ -199,7 +200,7 @@ try:
         tags = response_jsondata['values']
         for tag in tags:
             #print(tag['displayId'] + '\n')
-            prodDeployTagPattern = 'PROD_DEPLOY_(0[1-9]|[12]\d|3[01])_(?:JAN|Jan|FEB|Feb|MAR|Mar|APR|Apr|MAY|May|JUN|Jun|JUL|Jul|AUG|Aug|SEP|Sep|OCT|Oct|NOV|Nov|DEC|Dec)_(19|20)\d{2}'
+            prodDeployTagPattern = "PROD_DEPLOY_(0[1-9]|[12]\d|3[01])_(?:JAN|Jan|FEB|Feb|MAR|Mar|APR|Apr|MAY|May|JUN|Jun|JUL|Jul|AUG|Aug|SEP|Sep|OCT|Oct|NOV|Nov|DEC|Dec)_(19|20)\d{2}"
             if (re.match(prodDeployTagPattern, tag['displayId'])):
                 thisRepoOjb.hasProdImplementationTag = True
                 thisRepoOjb.modifyHealth(+1, str("You have a commit with prod implementation tag: " + tag['displayId']))
@@ -207,7 +208,7 @@ try:
         if not thisRepoOjb.hasProdImplementationTag:
             thisRepoOjb.modifyHealth(0, "Warning: You should have a prod implementation Tag with format: PROD_DEPLOY_DD_MMM_YYYY ")
             
-        thisRepoOjb.printRepoDetails();
+        thisRepoOjb.printRepoDetails()
 
 #    print('\n\n >> Branches details \n')
 #    for branch in branchList:

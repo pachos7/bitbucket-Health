@@ -7,13 +7,13 @@ A system of negatives and positive points is used to give you a generic idea of 
 # Points system
 +7 Health starts with a base +7 score
 +1 Having a 'master' branch set as default
-+1 Having commit with prod implementation tags
++1 Having commit with prod implementation tag
 +1 Having less than 5 active branches
 -1 Having a 'release','development','integration' named branch
 -1 Having more than 5 active branches
 -1 Each inactive branch (not updated in the last 3 months)
--1 Each merged branch (they should be deleted)
--1 Having branches prefixed with 'bugfix', 'Hotfix', 'Release'
+-1 Having branches prefixed with 'Bugfix', 'Hotfix', 'Release'
+-2 Each merged branch (they should be deleted)
 
 ## Getting Started
 
