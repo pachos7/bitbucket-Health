@@ -65,6 +65,22 @@ class branchObj:
         print(self.name + ' | Age: ' + str(self.age) + ' days | Message: ' + self.message)
 
 
+class repoObj:
+    def __init__(self, name):
+        self.name = name
+        self.health = 7
+        self.hasMasterBrach = False
+        self.oldBranchesCount = 0
+        self.activeBranchesCount = 0
+        self.messages = []
+
+
+    def printRepoDetails(self):
+        print('>> Repo ' + self.name + ' details.\n')
+        print('    Health(' + str(self.health) +'): [' + '*' * self.health + ' ' * (10 - self.health) + ']')
+        print('    Branches: ' + str(self.activeBranchesCount + self.oldBranchesCount) + ' [' + str(self.activeBranchesCount) + ' active / ' + str(self.oldBranchesCount) + ' old]')
+    
+
 headers = {
     'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
     'Content-Type': 'application/json',
@@ -94,8 +110,7 @@ try:
         print(':( Sorry no repository found with that name: ' + str(args['project']) + '/' + str(args['repo']))
          
     for repo in repos_list: 
-        Health = 7
-
+        thisRepoOjb = repoObj(repo)
         # *********************************************************************************************************
         # Commits Analysis
         # *********************************************************************************************************
@@ -114,10 +129,8 @@ try:
         # *********************************************************************************************************
         # Branches Analysis
         # *********************************************************************************************************
-        oldBranchesCount = 0
-        activeBranchesCount = len(branchList)
+        #activeBranchesCount = len(branchList)
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
-        print('\n repo: *' + repo + '*') 
         response_jsondata = json.loads(response.content, encoding=None)
         #print(response.content)
 
@@ -133,13 +146,13 @@ try:
                 thisBranchOjb.message = "You have a master" 
                 if str(branch['isDefault']) == "True":
                     thisBranchOjb.message+= " and is set as default branch :thumbsup: "
-                    Health += 1
+                    thisRepoOjb.health += 1
                 else:
                     thisBranchOjb.message+= "but is NOT your default branch :rage: "
             
             elif branch['displayId'].upper() == 'DEVELOPMENT' or branch['displayId'].upper() == 'RELEASE' or branch['displayId'].upper() == 'INTEGRATION':
                 thisBranchOjb.message = "Hummm... you shouldn't be using this branch name :broken_heart: "
-                Health -= 1
+                thisRepoOjb.health -= 1
             else:
                 pattern = 'feature/[A-Z]\w+-[0-9]\w+'
                 if not(re.match(pattern, branch['displayId'])):
@@ -147,15 +160,11 @@ try:
             
             # Add branch age information 
             if thisBranchOjb.name.upper() <> 'MASTER':
-                if thisBranchOjb.age > 365:
-                    thisBranchOjb.message += ". Think about deleting this bro!  :skull:"
-                elif thisBranchOjb.age > 180:
-                    thisBranchOjb.message += ". I see some spiderwebs, 6 months and you have not worked on this, take a look.  :("
-                elif thisBranchOjb.age > 90:
+                if thisBranchOjb.age > 90:
                     thisBranchOjb.message += ". Forgot about this? 3 months ago it was important, how about now?  :("
-                    oldBranchesCount += 1
+                    thisRepoOjb.oldBranchesCount += 1
                 else:
-                    activeBranchesCount += 1
+                    thisRepoOjb.activeBranchesCount += 1
 
             # Review associated Pull Requests status
             try: 
@@ -176,36 +185,34 @@ try:
             except KeyError:
                 pass
         
-        if activeBranchesCount <= 5:
-            Health += 1
+        if thisRepoOjb.activeBranchesCount <= 5:
+            thisRepoOjb.health += 1
         else:
-            Health -= 1
+            thisRepoOjb.health -= 1
 
         # *********************************************************************************************************
         # Tags Analysis
         # *********************************************************************************************************
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/tags', headers=headers, params=(('limit', '100'),('details', 'true'),))
         response_jsondata = json.loads(response.content, encoding=None)
-        print(response.content)
+        #   print(response.content)
         tags = response_jsondata['values']
         for tag in tags:
             #print(tag['displayId'] + '\n')
             prodDeployTagPattern = 'PROD_DEPLOY_(0[1-9]|[12]\d|3[01])_(?:JAN|Jan|FEB|Feb|MAR|Mar|APR|Apr|MAY|May|JUN|Jun|JUL|Jul|AUG|Aug|SEP|Sep|OCT|Oct|NOV|Nov|DEC|Dec)_(19|20)\d{2}'
             if (re.match(prodDeployTagPattern, tag['displayId'])):
-                Health += 1
+                thisRepoOjb.health += 1
                 print("Bingo! " + tag['displayId'])
         
-    print('\n\n >> Repo details \n')
-    print('    Health(' + str(Health) +'): [' + '*' * Health + ' ' * (10 - Health) + ']')
-    print('    Branches: ' + str(activeBranchesCount + oldBranchesCount) + ' [' + str(activeBranchesCount) + ' active / ' + str(oldBranchesCount) + ' old]')
-    
+        thisRepoOjb.printRepoDetails();
+
     print('\n\n >> Branches details \n')
     for branch in branchList:
         branch.printBranchDetails()
 
     print('\n\n >> Recent users Activity details (last 100 commits)\n')
     for user in usersList:
-        user.printUserDetails()
+        #user.printUserDetails()
         print('\n')
 
 except requests.exceptions.RequestException as e: 
