@@ -95,9 +95,10 @@ try:
          
     for repo in repos_list: 
         Health = 7
-        oldBranchesCount = 0
-        activeBranchesCount = len(branchList)
-        # Review users commits activity in branch
+
+        # *********************************************************************************************************
+        # Commits Analysis
+        # *********************************************************************************************************
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/commits', headers=headers, params=(('limit', '100'),('details', 'true'),))
         response_jsondata = json.loads(response.content, encoding=None)
         # print(response.content)
@@ -110,6 +111,11 @@ try:
             else:
                 thisUser.addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
 
+        # *********************************************************************************************************
+        # Branches Analysis
+        # *********************************************************************************************************
+        oldBranchesCount = 0
+        activeBranchesCount = len(branchList)
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
         print('\n repo: *' + repo + '*') 
         response_jsondata = json.loads(response.content, encoding=None)
@@ -175,6 +181,20 @@ try:
         else:
             Health -= 1
 
+        # *********************************************************************************************************
+        # Tags Analysis
+        # *********************************************************************************************************
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/tags', headers=headers, params=(('limit', '100'),('details', 'true'),))
+        response_jsondata = json.loads(response.content, encoding=None)
+        print(response.content)
+        tags = response_jsondata['values']
+        for tag in tags:
+            #print(tag['displayId'] + '\n')
+            prodDeployTagPattern = 'PROD_DEPLOY_(0[1-9]|[12]\d|3[01])_(?:JAN|Jan|FEB|Feb|MAR|Mar|APR|Apr|MAY|May|JUN|Jun|JUL|Jul|AUG|Aug|SEP|Sep|OCT|Oct|NOV|Nov|DEC|Dec)_(19|20)\d{2}'
+            if (re.match(prodDeployTagPattern, tag['displayId'])):
+                Health += 1
+                print("Bingo! " + tag['displayId'])
+        
     print('\n\n >> Repo details \n')
     print('    Health(' + str(Health) +'): [' + '*' * Health + ' ' * (10 - Health) + ']')
     print('    Branches: ' + str(activeBranchesCount + oldBranchesCount) + ' [' + str(activeBranchesCount) + ' active / ' + str(oldBranchesCount) + ' old]')
