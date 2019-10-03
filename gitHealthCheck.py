@@ -70,16 +70,21 @@ class repoObj:
         self.name = name
         self.health = 7
         self.hasMasterBrach = False
+        self.hasProdImplementationTag = False
         self.oldBranchesCount = 0
         self.activeBranchesCount = 0
-        self.messages = []
+        self.healthMessages = [['{0:+}'.format(self.health), 'Base Score']]
 
+    def modifyHealth(self, healthModifier, healthMessage):
+        self.health += healthModifier
+        self.healthMessages.append(['{0:+}'.format(healthModifier) , healthMessage])
 
     def printRepoDetails(self):
         print('>> Repo ' + self.name + ' details.\n')
         print('    Health(' + str(self.health) +'): [' + '*' * self.health + ' ' * (10 - self.health) + ']')
         print('    Branches: ' + str(self.activeBranchesCount + self.oldBranchesCount) + ' [' + str(self.activeBranchesCount) + ' active / ' + str(self.oldBranchesCount) + ' old]')
-    
+        for message in self.healthMessages:
+            print('    ' + str(message))
 
 headers = {
     'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
@@ -143,26 +148,21 @@ try:
 
             # Check Branch Naming conventions
             if thisBranchOjb.name.upper() == 'MASTER':
-                thisBranchOjb.message = "You have a master" 
                 if str(branch['isDefault']) == "True":
-                    thisBranchOjb.message+= " and is set as default branch :thumbsup: "
-                    thisRepoOjb.health += 1
-                else:
-                    thisBranchOjb.message+= "but is NOT your default branch :rage: "
+                    thisRepoOjb.modifyHealth(+1, "You have a master branch set as default")
             
             elif branch['displayId'].upper() == 'DEVELOPMENT' or branch['displayId'].upper() == 'RELEASE' or branch['displayId'].upper() == 'INTEGRATION':
-                thisBranchOjb.message = "Hummm... you shouldn't be using this branch name :broken_heart: "
-                thisRepoOjb.health -= 1
-            else:
-                pattern = 'feature/[A-Z]\w+-[0-9]\w+'
-                if not(re.match(pattern, branch['displayId'])):
-                    thisBranchOjb.message += "Don't like your branch name that much  :thumbsdown:"
+                thisRepoOjb.modifyHealth(-1, str("You shouldn't be using branch name: " + branch['displayId']))
+#            else:
+#                pattern = 'feature/[A-Z]\w+-[0-9]\w+'
+#                if not(re.match(pattern, branch['displayId'])):
+#                    thisBranchOjb.message += "Don't like your branch name that much  :thumbsdown:"
             
             # Add branch age information 
             if thisBranchOjb.name.upper() <> 'MASTER':
                 if thisBranchOjb.age > 90:
-                    thisBranchOjb.message += ". Forgot about this? 3 months ago it was important, how about now?  :("
                     thisRepoOjb.oldBranchesCount += 1
+                    thisRepoOjb.modifyHealth(-1, str("branch not updated in las 90 days: " + thisBranchOjb.name + " | Age: " + str(thisBranchOjb.age) + " days"))
                 else:
                     thisRepoOjb.activeBranchesCount += 1
 
@@ -185,10 +185,10 @@ try:
             except KeyError:
                 pass
         
-        if thisRepoOjb.activeBranchesCount <= 5:
-            thisRepoOjb.health += 1
-        else:
-            thisRepoOjb.health -= 1
+        if thisRepoOjb.activeBranchesCount > 5:
+            thisRepoOjb.modifyHealth(-1, "You have more than 5 active branches, you may need to merge some")
+        else: 
+            thisRepoOjb.modifyHealth(+1, "You have less than 5 active branches.")
 
         # *********************************************************************************************************
         # Tags Analysis
@@ -201,14 +201,17 @@ try:
             #print(tag['displayId'] + '\n')
             prodDeployTagPattern = 'PROD_DEPLOY_(0[1-9]|[12]\d|3[01])_(?:JAN|Jan|FEB|Feb|MAR|Mar|APR|Apr|MAY|May|JUN|Jun|JUL|Jul|AUG|Aug|SEP|Sep|OCT|Oct|NOV|Nov|DEC|Dec)_(19|20)\d{2}'
             if (re.match(prodDeployTagPattern, tag['displayId'])):
-                thisRepoOjb.health += 1
-                print("Bingo! " + tag['displayId'])
+                thisRepoOjb.hasProdImplementationTag = True
+                thisRepoOjb.modifyHealth(+1, str("You have a commit with prod implementation tag: " + tag['displayId']))
         
+        if not thisRepoOjb.hasProdImplementationTag:
+            thisRepoOjb.modifyHealth(0, "Warning: You should have a prod implementation Tag with format: PROD_DEPLOY_DD_MMM_YYYY ")
+            
         thisRepoOjb.printRepoDetails();
 
-    print('\n\n >> Branches details \n')
-    for branch in branchList:
-        branch.printBranchDetails()
+#    print('\n\n >> Branches details \n')
+#    for branch in branchList:
+#        branch.printBranchDetails()
 
     print('\n\n >> Recent users Activity details (last 100 commits)\n')
     for user in usersList:

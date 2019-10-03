@@ -5,16 +5,14 @@ It uses Github branching strategy so it expects a master branch and several feat
 A system of negatives and positive points is used to give you a generic idea of your repository status.
 
 # Points system
++7 Health starts with a base +7 score
 +1 Having a 'master' branch set as default
++1 Having commit with prod implementation tags
++1 Having less than 5 active branches
 -1 Having a 'release','development','integration' named branch
-
-+1 Having less than 5 active (updated in the last 3 months) branches
--1 Having more that 5 active branches
-
+-1 Having more than 5 active branches
 -1 Each inactive branch (not updated in the last 3 months)
 -1 Each merged branch (they should be deleted)
-
-+1 Having prod implementation tags in master commits
 -1 Having branches prefixed with 'bugfix', 'Hotfix', 'Release'
 
 ## Getting Started
