@@ -1,6 +1,3 @@
-# Example python gitHealthCheck.py -url https://bitbucketglobal.experian.local/ -u cc046fn -p 'abc123' -pr GVAPUS -r PINNING
-# Example python gitHealthCheck.py -url https://bitbucketglobal.experian.local/ -u cc046fn -p 'abc123' -pr RGPM -r expn-cis-hermes
-
 import requests
 import json
 from nested_lookup import nested_lookup
@@ -54,17 +51,49 @@ def bitbucketDate(bitbucketDate):
     strDate = bitbucketDate/1000 # remove last 3 zeros from timestamp value
     return datetime.date.fromtimestamp(strDate)
 
+class branchObj:
+    def __init__(self, name):
+        self.name = name
+        self.age = 0
+        self.message = ""
+        self.status = ""
+
+    def printBranchDetails(self):
+        print(self.name + ' | Age: ' + str(self.age) + ' days | Message: ' + self.message)
+
+
+class repoObj:
+    def __init__(self, name):
+        self.name = name
+        self.health = 7
+        self.hasMasterBrach = False
+        self.hasProdImplementationTag = False
+        self.oldBranchesCount = 0
+        self.activeBranchesCount = 0
+        self.healthMessages = [['{0:+}'.format(self.health), 'Base Score']]
+
+    def modifyHealth(self, healthModifier, healthMessage):
+        self.health += healthModifier
+        self.healthMessages.append(['{0:+}'.format(healthModifier) , healthMessage])
+
+    def printRepoDetails(self):
+        print('>> Repo ' + self.name + ' details.')
+        print('    Health(' + str(self.health) +'): [' + '*' * self.health + ' ' * (10 - self.health) + ']')
+        print('    Branches: ' + str(self.activeBranchesCount + self.oldBranchesCount) + ' [' + str(self.activeBranchesCount) + ' active / ' + str(self.oldBranchesCount) + ' old]')
+        for message in self.healthMessages:
+            print('    ' + str(message))
+        print('\n')
+
 headers = {
     'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
     'Content-Type': 'application/json',
 }
 
-params = (
-    ('limit', '100'),
-)
+params = (('limit', '100'),)
 
 reponame =''
 usersList =[]
+branchList = []
 
 try:
     print('>>> git Health Check <<<') 
@@ -79,65 +108,70 @@ try:
     repos_list = nested_lookup('slug', response_jsondata)
 
     if len(repos_list) == 0:
-        print(':( Sorry no repository foung with that name: ' + str(args['project']) + '/' + str(args['repo']))
+        print(':( Sorry no repository found with that name: ' + str(args['project']) + '/' + str(args['repo']))
          
     for repo in repos_list: 
-        # Review users commits activity in branch
+        thisRepoOjb = repoObj(repo)
+        # *********************************************************************************************************
+        # Commits Analysis
+        # *********************************************************************************************************
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/commits', headers=headers, params=(('limit', '100'),('details', 'true'),))
         response_jsondata = json.loads(response.content, encoding=None)
         # print(response.content)
         commits = response_jsondata['values']
         for thisCommit in commits:
-            thisUser = findUserInList(thisCommit["author"]["emailAddress"], usersList)
+            thisUser = findUserInList(thisCommit["author"]["emailAddress"].upper(), usersList)
             if  thisUser == None:
-                usersList.append(user(thisCommit["author"]["emailAddress"]))
+                usersList.append(user(thisCommit["author"]["emailAddress"].upper()))
                 usersList[len(usersList) - 1].addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
             else:
                 thisUser.addActivity(activity(thisCommit["displayId"],"Commit Creator", repo, "Master", bitbucketDate(thisCommit["authorTimestamp"])))
 
-        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', '100'),('details', 'true'),))
-        print('\n repo: *' + repo + '*') 
+        # *********************************************************************************************************
+        # Branches Analysis
+        # *********************************************************************************************************
+        maxBranchesLimit = 200
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/branches', headers=headers, params=(('limit', maxBranchesLimit),('details', 'true'),))
         response_jsondata = json.loads(response.content, encoding=None)
         #print(response.content)
 
         branches = response_jsondata['values']
         for branch in branches:
-
             #print(branch['metadata'])
-            ageDays = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
-            print('    branch: *' + branch['displayId'] + '* updated ' + str(ageDays) + ' days ago)')
+            thisBranchOjb = branchObj(branch['displayId'])
+            branchList.append(thisBranchOjb)
+            print(branch['displayId'])
+            try:
+                thisBranchOjb.age = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
+            except:
+                thisBranchOjb.age = 9999
 
-            message = ""
-
+            unwantedBranchNamesPattern = "(Development|Dev|Release|Integration|Prod|bugfix/.*|Hotfix/.*|Release/.*)"
             # Check Branch Naming conventions
-            if branch['displayId'].upper() == 'MASTER':
-                message = "        + You have a master" 
+            if thisBranchOjb.name.upper() == 'MASTER':
                 if str(branch['isDefault']) == "True":
-                    message+= " and is set as default branch :thumbsup: "
-                else:
-                    message+= "but is NOT your default branch :rage: "
+                    thisRepoOjb.modifyHealth(+1, "You have a master branch set as default")
             
-            elif branch['displayId'].upper() == 'DEVELOPMENT' or branch['displayId'].upper() == 'RELEASE' or branch['displayId'].upper() == 'INTEGRATION':
-                message = "        Hummm... you shouldn't be using this branch name :broken_heart: "
-            else:
-                pattern = 'feature/[A-Z]\w+-[0-9]\w+'
-                if not(re.match(pattern, branch['displayId'])):
-                    message += "        Don't like your branch name that much  :thumbsdown:"
+            elif (re.match(unwantedBranchNamesPattern, branch['displayId'], re.IGNORECASE)):
+                thisRepoOjb.modifyHealth(-1, str('You shouldnt be using branch name: ' + branch['displayId']))
+#            else:
+#                pattern = 'feature/[A-Z]\w+-[0-9]\w+'
+#                if not(re.match(pattern, branch['displayId'])):
+#                    thisBranchOjb.message += "Don't like your branch name that much  :thumbsdown:"
             
             # Add branch age information 
-            if ageDays > 365:
-                message += ". Think about deleting this bro!  :skull:"
-            elif ageDays > 180:
-                message += ". I see some spiderwebs, 6 months and you have not worked on this, take a look.  :("
-            elif ageDays > 90:
-                message += ". Forgot about this? 3 months ago it was important, how about now?  :("
-            print(message)
+            if thisBranchOjb.name.upper() <> 'MASTER':
+                if thisBranchOjb.age > 90:
+                    thisRepoOjb.oldBranchesCount += 1
+                    thisRepoOjb.modifyHealth(-1, str("branch not updated in las 90 days: " + thisBranchOjb.name + " | Age: " + str(thisBranchOjb.age) + " days"))
+                else:
+                    thisRepoOjb.activeBranchesCount += 1
 
             # Review associated Pull Requests status
             try: 
                 thisPullRequest = branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']
                 #print(thisPullRequest)
-                thisUserEmail = thisPullRequest['author']['user']['emailAddress']
+                thisUserEmail = thisPullRequest['author']['user']['emailAddress'].upper()
                 
                 thisUser = findUserInList(thisUserEmail, usersList)
                 if  thisUser == None:
@@ -147,13 +181,43 @@ try:
                     thisUser.addActivity(activity(thisPullRequest["id"],"Pull Request Creator", repo, branch['displayId'], bitbucketDate(thisPullRequest["createdDate"])))
         
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
-                    print('        @' + thisUserEmail +' Merged branches *MUST* be deleted :rage: ')
+                    thisRepoOjb.modifyHealth(-2, str("Merged branches MUST be deleted " + thisBranchOjb.name))
+                    thisBranchOjb.message += '@' + thisUserEmail +' Merged branches *MUST* be deleted :rage: '
+                    thisBranchOjb.status = 'Obsolete'
             except KeyError:
                 pass
+        
+        if thisRepoOjb.activeBranchesCount > 5:
+            thisRepoOjb.modifyHealth(-1, "You have more than 5 active branches, you may need to merge some")
+        else: 
+            thisRepoOjb.modifyHealth(+1, "You have less than 5 active branches.")
 
-    print('\n\n >> Users Activity details \n')
+        # *********************************************************************************************************
+        # Tags Analysis
+        # *********************************************************************************************************
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + repo + '/tags', headers=headers, params=(('limit', '100'),('details', 'true'),))
+        response_jsondata = json.loads(response.content, encoding=None)
+        #   print(response.content)
+        tags = response_jsondata['values']
+        for tag in tags:
+            #print(tag['displayId'] + '\n')
+            prodDeployTagPattern = "PROD_DEPLOY_(0[1-9]|[12]\d|3[01])_(?:JAN|Jan|FEB|Feb|MAR|Mar|APR|Apr|MAY|May|JUN|Jun|JUL|Jul|AUG|Aug|SEP|Sep|OCT|Oct|NOV|Nov|DEC|Dec)_(19|20)\d{2}"
+            if (re.match(prodDeployTagPattern, tag['displayId'])):
+                thisRepoOjb.hasProdImplementationTag = True
+                thisRepoOjb.modifyHealth(+1, str("You have a commit with prod implementation tag: " + tag['displayId']))
+        
+        if not thisRepoOjb.hasProdImplementationTag:
+            thisRepoOjb.modifyHealth(0, "Warning: You should have a prod implementation Tag with format: PROD_DEPLOY_DD_MMM_YYYY ")
+            
+        thisRepoOjb.printRepoDetails()
+
+#    print('\n\n >> Branches details \n')
+#    for branch in branchList:
+#        branch.printBranchDetails()
+
+    print('\n\n >> Recent users Activity details (last 100 commits)\n')
     for user in usersList:
-        user.printUserDetails()
+        #user.printUserDetails()
         print('\n')
 
 except requests.exceptions.RequestException as e: 
