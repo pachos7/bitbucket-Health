@@ -78,7 +78,11 @@ class repoObj:
 
     def printRepoDetails(self):
         print('>> Repo ' + self.name + ' details.')
-        print('    Health(' + str(self.health) +'): [' + '*' * self.health + ' ' * (10 - self.health) + ']')
+        if self.health <= 0:
+            print('    Health(' + str(self.health) +'): [' + ' ' * 10 + ']')
+        else:
+            print('    Health(' + str(self.health) +'): [' + '*' * self.health + ' ' * (10 - self.health) + ']')
+
         print('    Branches: ' + str(self.activeBranchesCount + self.oldBranchesCount) + ' [' + str(self.activeBranchesCount) + ' active / ' + str(self.oldBranchesCount) + ' old]')
         for message in self.healthMessages:
             print('    ' + str(message))
@@ -96,7 +100,7 @@ usersList =[]
 branchList = []
 
 try:
-    print('>>> git Health Check <<<') 
+    print('>>> Bitbucket gitHealthCheck <<<') 
     if args['repo']:
         print('>> Analizing project :' + str(args['project']) + ' | repo: ' + str(args['repo'])) 
         reponame = args['repo']
@@ -140,7 +144,7 @@ try:
             #print(branch['metadata'])
             thisBranchOjb = branchObj(branch['displayId'])
             branchList.append(thisBranchOjb)
-            print(branch['displayId'])
+
             try:
                 thisBranchOjb.age = (datetime.date.today() - bitbucketDate(branch['metadata']['com.atlassian.bitbucket.server.bitbucket-branch:latest-commit-metadata']['authorTimestamp'])).days
             except:
@@ -215,10 +219,10 @@ try:
 #    for branch in branchList:
 #        branch.printBranchDetails()
 
-    print('\n\n >> Recent users Activity details (last 100 commits)\n')
-    for user in usersList:
+#    print('\n\n >> Recent users Activity details (last 100 commits)\n')
+#    for user in usersList:
         #user.printUserDetails()
-        print('\n')
+#        print('\n')
 
 except requests.exceptions.RequestException as e: 
     print e
