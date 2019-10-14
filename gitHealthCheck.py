@@ -13,6 +13,7 @@ ap.add_argument("-u", "--user", required=True, help="User")
 ap.add_argument("-p", "--password", required=True, help="Password")
 ap.add_argument("-pr", "--project", required=True, help="Project name")
 ap.add_argument("-r", "--repo", required=False, help="Repository name")
+ap.add_argument("-s", "--save", required=False, help="Save report to file", action='store_true')
 
 args = vars(ap.parse_args())
 
@@ -98,6 +99,7 @@ params = (('limit', '100'),)
 reponame =''
 usersList =[]
 branchList = []
+repoHealthSummary = []
 
 try:
     print('>>> Bitbucket gitHealthCheck <<<') 
@@ -214,6 +216,7 @@ try:
             thisRepoOjb.modifyHealth(0, "Warning: You should have a prod implementation Tag with format: PROD_DEPLOY_DD_MMM_YYYY ")
             
         thisRepoOjb.printRepoDetails()
+        repoHealthSummary.append([str(thisRepoOjb.name), thisRepoOjb.health])
 
 #    print('\n\n >> Branches details \n')
 #    for branch in branchList:
@@ -223,6 +226,16 @@ try:
 #    for user in usersList:
         #user.printUserDetails()
 #        print('\n')
+    
+    if args['save']:
+        if args['repo'] == None:
+            repoName = ''
+        else:
+            repoName = '.' + args['repo']
+
+        outputSummaryFile =  open('./' + str(args['project']) + repoName + '.gitHealthCheck.txt', 'w')
+        for repo in repoHealthSummary:
+            outputSummaryFile.write(repo[0] + ',' + str(repo[1]) + '\n')
 
 except requests.exceptions.RequestException as e: 
     print e
