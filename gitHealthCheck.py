@@ -14,6 +14,7 @@ ap.add_argument("-p", "--password", required=True, help="Password")
 ap.add_argument("-pr", "--project", required=True, help="Project name")
 ap.add_argument("-r", "--repo", required=False, help="Repository name")
 ap.add_argument("-s", "--save", required=False, help="Save report to file", action='store_true')
+ap.add_argument("-pb", "--printbranch", required=False, help="Will print branches details", action='store_true')
 
 args = vars(ap.parse_args())
 
@@ -56,11 +57,10 @@ class branchObj:
     def __init__(self, name):
         self.name = name
         self.age = 0
-        self.message = ""
         self.status = ""
 
     def printBranchDetails(self):
-        print(self.name + ' | Age: ' + str(self.age) + ' days | Message: ' + self.message)
+        print(self.name + ' | Age: ' + str(self.age) + ' days | Status: ' + self.status)
 
 
 class repoObj:
@@ -160,10 +160,6 @@ try:
             
             elif (re.match(unwantedBranchNamesPattern, branch['displayId'], re.IGNORECASE)):
                 thisRepoOjb.modifyHealth(-1, str('You shouldnt be using branch name: ' + branch['displayId']))
-#            else:
-#                pattern = 'feature/[A-Z]\w+-[0-9]\w+'
-#                if not(re.match(pattern, branch['displayId'])):
-#                    thisBranchOjb.message += "Don't like your branch name that much  :thumbsdown:"
             
             # Add branch age information 
             if thisBranchOjb.name.upper() <> 'MASTER':
@@ -188,8 +184,7 @@ try:
         
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
                     thisRepoOjb.modifyHealth(-2, str("Merged branches MUST be deleted " + thisBranchOjb.name))
-                    thisBranchOjb.message += '@' + thisUserEmail +' Merged branches *MUST* be deleted :rage: '
-                    thisBranchOjb.status = 'Obsolete'
+                    thisBranchOjb.status = 'MERGED'
             except KeyError:
                 pass
         
@@ -206,7 +201,6 @@ try:
         #   print(response.content)
         tags = response_jsondata['values']
         for tag in tags:
-            #print(tag['displayId'] + '\n')
             prodDeployTagPattern = "PROD_DEPLOY_(0[1-9]|[12]\d|3[01])_(?:JAN|Jan|FEB|Feb|MAR|Mar|APR|Apr|MAY|May|JUN|Jun|JUL|Jul|AUG|Aug|SEP|Sep|OCT|Oct|NOV|Nov|DEC|Dec)_(19|20)\d{2}"
             if (re.match(prodDeployTagPattern, tag['displayId'])):
                 thisRepoOjb.hasProdImplementationTag = True
@@ -218,9 +212,10 @@ try:
         thisRepoOjb.printRepoDetails()
         repoHealthSummary.append([str(thisRepoOjb.name), thisRepoOjb.health])
 
-#    print('\n\n >> Branches details \n')
-#    for branch in branchList:
-#        branch.printBranchDetails()
+    if args['printbranch']:
+        print('\n\n >> Branches details \n')
+        for branch in branchList:
+            branch.printBranchDetails()
 
 #    print('\n\n >> Recent users Activity details (last 100 commits)\n')
 #    for user in usersList:
