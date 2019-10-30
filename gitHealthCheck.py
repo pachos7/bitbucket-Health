@@ -57,7 +57,7 @@ class branchObj:
     def __init__(self, name):
         self.name = name
         self.age = 0
-        self.status = ""
+        self.status = "ACTIVE"
 
     def printBranchDetails(self):
         print(self.name + ' | Age: ' + str(self.age) + ' days | Status: ' + self.status)
@@ -168,12 +168,13 @@ try:
                 thisRepoOjb.modifyHealth(-1, str('You shouldnt be using branch name: ' + branch['displayId']))
             
             # Add branch age information 
-            if thisBranchOjb.name.upper() <> 'MASTER':
-                if thisBranchOjb.age > 90:
-                    thisRepoOjb.oldBranchesCount += 1
-                    thisRepoOjb.modifyHealth(-1, str("branch not updated in las 90 days: " + thisBranchOjb.name + " | Age: " + str(thisBranchOjb.age) + " days"))
-                else:
-                    thisRepoOjb.activeBranchesCount += 1
+            if thisBranchOjb.age > 90:
+                thisBranchOjb.status = "INACTIVE"
+                thisRepoOjb.oldBranchesCount += 1
+                thisRepoOjb.modifyHealth(-1, str("branch not updated in las 90 days: " + thisBranchOjb.name + " | Age: " + str(thisBranchOjb.age) + " days"))
+            else:
+                thisRepoOjb.activeBranchesCount += 1
+                      
 
             # Review associated Pull Requests status
             try: 
