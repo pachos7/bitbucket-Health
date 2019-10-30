@@ -107,9 +107,15 @@ try:
         print('>> Analizing project :' + str(args['project']) + ' | repo: ' + str(args['repo'])) 
         reponame = args['repo']
     else:
-        print('>> Analizing all repositories in project :' + str(args['project'])) 
+        print('>> Analizing all repositories in project :' + str(args['project']))
+    
+    try:
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print e
+        sys.exit(1)
 
-    response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
     response_jsondata = json.loads(response.content, encoding=None)
     repos_list = nested_lookup('slug', response_jsondata)
 
