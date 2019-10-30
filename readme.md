@@ -42,7 +42,9 @@ Use ```gitHealthCheck.py -h``` to ger a list of paramemeters.
 * -u/--user          User to access the project
 * -p/--password      Password to access the project
 * -pr/--project      Project Name
-* -r/repo            Repository name, if ommited all repos in the project would be evaluated
+* -r/--repo          Repository name, if ommited all repos in the project would be evaluated
+* -s/--save          Option to save summary report to file
+* -pb/--printbranch  Option to print branches details (optional)
 
 ## Running the tests
 

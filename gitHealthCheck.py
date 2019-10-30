@@ -13,6 +13,8 @@ ap.add_argument("-u", "--user", required=True, help="User")
 ap.add_argument("-p", "--password", required=True, help="Password")
 ap.add_argument("-pr", "--project", required=True, help="Project name")
 ap.add_argument("-r", "--repo", required=False, help="Repository name")
+ap.add_argument("-s", "--save", required=False, help="Save report to file", action='store_true')
+ap.add_argument("-pb", "--printbranch", required=False, help="Will print branches details", action='store_true')
 
 args = vars(ap.parse_args())
 
@@ -55,11 +57,10 @@ class branchObj:
     def __init__(self, name):
         self.name = name
         self.age = 0
-        self.message = ""
-        self.status = ""
+        self.status = "ACTIVE"
 
     def printBranchDetails(self):
-        print(self.name + ' | Age: ' + str(self.age) + ' days | Message: ' + self.message)
+        print(self.name + ' | Age: ' + str(self.age) + ' days | Status: ' + self.status)
 
 
 class repoObj:
@@ -98,6 +99,7 @@ params = (('limit', '100'),)
 reponame =''
 usersList =[]
 branchList = []
+repoHealthSummary = []
 
 try:
     print('>>> Bitbucket gitHealthCheck <<<') 
@@ -105,9 +107,15 @@ try:
         print('>> Analizing project :' + str(args['project']) + ' | repo: ' + str(args['repo'])) 
         reponame = args['repo']
     else:
-        print('>> Analizing all repositories in project :' + str(args['project'])) 
+        print('>> Analizing all repositories in project :' + str(args['project']))
+    
+    try:
+        response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print e
+        sys.exit(1)
 
-    response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
     response_jsondata = json.loads(response.content, encoding=None)
     repos_list = nested_lookup('slug', response_jsondata)
 
@@ -158,18 +166,15 @@ try:
             
             elif (re.match(unwantedBranchNamesPattern, branch['displayId'], re.IGNORECASE)):
                 thisRepoOjb.modifyHealth(-1, str('You shouldnt be using branch name: ' + branch['displayId']))
-#            else:
-#                pattern = 'feature/[A-Z]\w+-[0-9]\w+'
-#                if not(re.match(pattern, branch['displayId'])):
-#                    thisBranchOjb.message += "Don't like your branch name that much  :thumbsdown:"
             
             # Add branch age information 
-            if thisBranchOjb.name.upper() <> 'MASTER':
-                if thisBranchOjb.age > 90:
-                    thisRepoOjb.oldBranchesCount += 1
-                    thisRepoOjb.modifyHealth(-1, str("branch not updated in las 90 days: " + thisBranchOjb.name + " | Age: " + str(thisBranchOjb.age) + " days"))
-                else:
-                    thisRepoOjb.activeBranchesCount += 1
+            if thisBranchOjb.age > 90:
+                thisBranchOjb.status = "INACTIVE"
+                thisRepoOjb.oldBranchesCount += 1
+                thisRepoOjb.modifyHealth(-1, str("branch not updated in las 90 days: " + thisBranchOjb.name + " | Age: " + str(thisBranchOjb.age) + " days"))
+            else:
+                thisRepoOjb.activeBranchesCount += 1
+                      
 
             # Review associated Pull Requests status
             try: 
@@ -186,8 +191,7 @@ try:
         
                 if branch['metadata']['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']['pullRequest']['state'].upper() == 'MERGED':
                     thisRepoOjb.modifyHealth(-2, str("Merged branches MUST be deleted " + thisBranchOjb.name))
-                    thisBranchOjb.message += '@' + thisUserEmail +' Merged branches *MUST* be deleted :rage: '
-                    thisBranchOjb.status = 'Obsolete'
+                    thisBranchOjb.status = 'MERGED'
             except KeyError:
                 pass
         
@@ -204,7 +208,6 @@ try:
         #   print(response.content)
         tags = response_jsondata['values']
         for tag in tags:
-            #print(tag['displayId'] + '\n')
             prodDeployTagPattern = "PROD_DEPLOY_(0[1-9]|[12]\d|3[01])_(?:JAN|Jan|FEB|Feb|MAR|Mar|APR|Apr|MAY|May|JUN|Jun|JUL|Jul|AUG|Aug|SEP|Sep|OCT|Oct|NOV|Nov|DEC|Dec)_(19|20)\d{2}"
             if (re.match(prodDeployTagPattern, tag['displayId'])):
                 thisRepoOjb.hasProdImplementationTag = True
@@ -214,15 +217,27 @@ try:
             thisRepoOjb.modifyHealth(0, "Warning: You should have a prod implementation Tag with format: PROD_DEPLOY_DD_MMM_YYYY ")
             
         thisRepoOjb.printRepoDetails()
+        repoHealthSummary.append([str(thisRepoOjb.name), thisRepoOjb.health])
 
-#    print('\n\n >> Branches details \n')
-#    for branch in branchList:
-#        branch.printBranchDetails()
+    if args['printbranch']:
+        print('\n\n >> Branches details \n')
+        for branch in branchList:
+            branch.printBranchDetails()
 
 #    print('\n\n >> Recent users Activity details (last 100 commits)\n')
 #    for user in usersList:
         #user.printUserDetails()
 #        print('\n')
+    
+    if args['save']:
+        if args['repo'] == None:
+            repoName = ''
+        else:
+            repoName = '.' + args['repo']
+
+        outputSummaryFile =  open('./' + str(args['project']) + repoName + '.gitHealthCheck.txt', 'w')
+        for repo in repoHealthSummary:
+            outputSummaryFile.write(repo[0] + ',' + str(repo[1]) + '\n')
 
 except requests.exceptions.RequestException as e: 
     print e
