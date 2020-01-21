@@ -89,8 +89,10 @@ class repoObj:
             print('    ' + str(message))
         print('\n')
 
+userpass = args['user'] + ':' + args['password']
+
 headers = {
-    'Authorization': 'Basic ' + base64.b64encode(args['user'] + ':' + args['password']),
+    'Authorization': 'Basic ' + base64.b64encode(userpass.encode("utf-8")).decode("ascii"),
     'Content-Type': 'application/json',
 }
 
@@ -113,7 +115,7 @@ try:
         response = requests.get(args['baseurl'] + 'rest/api/1.0/projects/' + args['project'] + '/repos/' + reponame, headers=headers, params=params)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print e
+        print(e)
         sys.exit(1)
 
     response_jsondata = json.loads(response.content, encoding=None)
@@ -240,7 +242,7 @@ try:
             outputSummaryFile.write(repo[0] + ',' + str(repo[1]) + '\n')
 
 except requests.exceptions.RequestException as e: 
-    print e
+    print(e)
     sys.exit(1)
 
 
