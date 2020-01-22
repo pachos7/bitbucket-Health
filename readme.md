@@ -55,6 +55,7 @@ Explain how to run the automated tests for this system...
 ## Authors
 
 * **Francisco Niño** - *Initial work* - [Pachos7](https://github.com/Pachos7)
+* **Ricardo Medina** - *Update on 2020-01-16* - Code changes to work using Python version 3, tested with version 3.7.3
 
 
 ## License
