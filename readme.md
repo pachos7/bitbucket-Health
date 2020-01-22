@@ -23,7 +23,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-Python 2.7.10
+Python 3.7.3
 
 ### Installing
 
