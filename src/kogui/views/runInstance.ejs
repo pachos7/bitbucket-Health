@@ -1,0 +1,291 @@
+<% include ./head %>
+<body>
+<% include ./header %>
+<main role="main" class="col-sm-9 ml-sm-auto col-md-10 pt-3">
+    <% if (runInstanceProcessList == null) { %>
+       <tr><td>No details for this Run Instance found</td></tr>
+    <% } else {  %>
+        <p></p>
+        <% var DB2_boxesCount = 0 ; 
+           var ASCEND_boxesCount = 0; 
+           var ASCENDDB2_boxesCount = 0;
+           var unknown_boxesCount = 0; %>
+        <h3>Run Instance: <%= runInstance %></h3> 
+        <div class="card" style="width: 40rem;">
+            <div class="card-header">
+            <i class="fa fa-table"></i> Campaign Details</div>
+            <div class="card-body">
+              <div class="table-responsive">
+              <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+              <tr><td>Client Name</td><td><a href="/campaign/getAccountsByClient/<%= campaignInformation.CLIENT_NAME %>"><%= campaignInformation.CLIENT_NAME %></a></td></tr>
+              <tr><td>Account</td><td><a href="/campaign/getCampaignsByAccount/<%= campaignInformation.ACCOUNT_NUMBER %>"><%= campaignInformation.ACCOUNT_NUMBER %></a></td></tr>
+              <tr><td>Campaign Name</td><td><a href="/campaign/getCampaignDetails/<%= campaignInformation.CAMPAIGN_NAME %>"><%= campaignInformation.CAMPAIGN_NAME %></a></td></tr>
+              <tr><td>Environment</td><td><%= campaignInformation.ENVIRONMENT %></td></tr>
+              <tr><td>Status</td><td> <% if (campaignInformation.STATUS == "Failed" || campaignInformation.STATUS == "Cancelled") { %> <i class="fa fa-times-circle" style="color:#FF0000;"></i>
+                <% } else if (campaignInformation.STATUS == "Success" ) { %> <i class="fa fa-check-circle" style="color:#45c10b;"></i><% }
+                     else if (campaignInformation.STATUS == "Executing" ) { %> <i class="fa fa-cog" style="color:rgb(236, 195, 1)"></i><% }
+                     else if (campaignInformation.STATUS == "Hold" ) { %> <i class="fa fa-hand-stop-o" style="color:rgb(153, 153, 153)"></i><% }
+                     else if (campaignInformation.STATUS == "Waiting_for_Slot" ) { %> <i class="fa fa-hourglass-half" style="color:rgb(252, 110, 2)"></i><% }
+                     else if (campaignInformation.STATUS == "Deliver_Hold" ) { %> <i class="fa fa-pause" style="color:rgb(224, 140, 231)"></i><% }
+                     else {} %> 
+                <%= campaignInformation.STATUS %>
+           </td></tr>
+              <tr><td>DB2 Trade Base Date</td><td><%= campaignInformation.DB2_TRADE_BASE_DT %></td></tr>
+              <tr><td>ASCEND Trade Base Date</td><td><%= campaignInformation.ASCEND_TRADE_BASE_DT %></td></tr>
+              </table>
+              </div>
+            </div>
+        </div>
+          <p></p>
+          
+
+        <div class="card">
+          <div class="card-body ">
+            <div id="tasksAccordion">
+            
+            <% runInstanceProcessList.forEach(function(process) { %>
+              <div class="card">
+                <div class="card-header" id="heading-<%= process.TASK_NAME.replace(/\s+/g, '') %>">
+                  <button class="btn btn-link" data-toggle="collapse" data-target="#collapse<%= process.TASK_NAME.replace(/\s+/g, '') %>" aria-expanded="true" aria-controls="collapse<%= process.TASK_NAME.replace(/\s+/g, '') %>">
+                      Task: <%= process.TASK_NAME %> <% if (process.TASK_STATUS == "Failed" || process.TASK_STATUS == "Cancelled") { %> <i class="fa fa-times-circle" style="color:#FF0000;"></i>
+                            <% } else if (process.TASK_STATUS == "Completed" ) { %> <i class="fa fa-check-circle" style="color:#45c10b;"></i><% }
+                                else if (process.TASK_STATUS == "Executing" ) { %> <i class="fa fa-cog" style="color:rgb(236, 195, 1)"></i><% }
+                                else if (process.TASK_STATUS == "Executing Async" ) { %> <i class="fa fa-cogs" style="color:rgb(236, 195, 1)"></i><% }
+                                else if (process.TASK_STATUS == "Waiting for Slot" ) { %> <i class="fa fa-hourglass-half" style="color:rgb(252, 110, 2)"></i><% }
+                                else if (process.TASK_STATUS == "Waiting for Dependency" ) { %> <i class="fa fa-coffee" style="color:rgb(170, 132, 102)"></i><% }
+                                else if (process.TASK_STATUS == "Hold" ) { %> <i class="fa fa-hand-stop-o" style="color:rgb(153, 153, 153)"></i><% }
+                                else if (process.TASK_STATUS == "Hold For QA" ) { %> <i class="fa fa-search" style="color:rgb(48, 113, 211)"></i><% }
+                                else {} %> <%= process.TASK_STATUS %> | Start:
+                          <% if (process.TASK_START == null) {%> -- <% } else { %><%=process.TASK_START.substring(0, 10) + ' ' +  process.TASK_START.substring(11, 16)%><% } %>
+                          | End: <% if (process.TASK_END   == null) {%> -- <% } else { %><%=process.TASK_END.substring(0, 10) + ' ' +  process.TASK_END.substring(11, 16)%><% } %>
+                          | Duration:
+                            <%if (process.TASK_START != null && process.TASK_END != null) {
+                              var startDate = new Date(process.TASK_START);
+                              var endDate = new Date(process.TASK_END);
+                              var elapsedHrs = Math.abs(endDate - startDate) / 36e5;%>
+                              <td><%=elapsedHrs.toFixed(2)%></td>
+                            <%} else { %> -- <% } %>  
+                  </button>
+                </div>
+
+                <div id="collapse<%= process.TASK_NAME.replace(/\s+/g, '') %>" class="collapse show" aria-labelledby="heading<%= process.TASK_NAME.replace(/\s+/g, '') %>" data-parent="#tasksAccordion">
+                  <div class="card-body table-responsive">
+                    <table class="table table-bordered table-sm" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                      <th>Execution</th>
+                      <th>TYPE</th>
+                      <th>STATUS</th>
+                      <th>I/O count</th>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th>Duration(Hrs)</th>
+                      <th>Message</th>
+                    </thead>
+                    <tbody>
+
+                      <% process.TASK_PROCESSES.forEach(function(this_process) { %>
+                        <tr <%  if (this_process['$']['status'] !== undefined) {
+                                   if (this_process['$']['status'] == "Failed") {%>style="background-color:#f5c6cb"<%}
+                                   else if (this_process['$']['status'].includes("Executing")) {%>style="background-color:#e4ebf2"<%} } %> >
+                          <% if (this_process['$']['processType'] === 'TASK') {
+                                this_process['$']['name'] = this_process['$']['name'].substring(2)  
+                             } else {
+                                const DB2Boxes = ['TRIGGER', 'EXPORTTOASCEND', 'IMPORT', 'EXPORT', 'REPORT', 'REPORTER', 'SHELL']
+                                let hasASCEND = false;
+                                let hasDB2 = false;
+
+                                if (DB2Boxes.indexOf(this_process['$']['processType']) >= 0) {
+                                  hasDB2 = true
+                                }
+                                
+                                if (typeof this_process['output'] !== "undefined") { 
+                                  
+                                  this_process['output'].forEach(function(this_output) { 
+                                    if ( typeof this_output['$']['name']    !== "undefined" && this_output['$']['name'].toUpperCase().includes("JOBSDAILY") || 
+                                        (typeof this_output['$']['message'] !== "undefined" && this_output['$']['message'].toUpperCase().includes("ASCEND")) || 
+                                        (typeof this_output['$']['message'] !== "undefined" && this_output['$']['message'].toUpperCase().includes("S3://"))  ||
+                                        (typeof this_output['$']['message'] !== "undefined" && this_output['$']['message'].toUpperCase().includes("S3A://"))  ||
+                                        (typeof this_output['$']['message'] !== "undefined" && this_output['$']['message'].toUpperCase().includes("AMPS SERVICE"))  ||
+                                        (typeof this_output['$']['message'] !== "undefined" && this_output['$']['message'].toUpperCase().includes("/APPNFS/NLFS001/SUNRISE/")) ) {
+                                      hasASCEND = true
+                                    }
+
+                                    if ( (typeof this_output['$']['name']    !== "undefined" && this_output['$']['name'].toUpperCase().includes("ORJOBS01")) || 
+                                         (typeof this_output['$']['name']    !== "undefined" && this_output['$']['name'].toUpperCase().includes("ORTMP01")) || 
+                                         (typeof this_output['$']['message'] !== "undefined" && this_output['$']['message'].toUpperCase().includes("DB2")) ||  
+                                         (typeof this_output['SQL']          !== "undefined" && this_output['SQL'].toString().toUpperCase().includes("FIELDS TERMINATED BY ")) ||
+                                         (typeof this_output['$']['message'] !== "undefined" && this_output['$']['message'].toUpperCase().includes("ORTMP01"))) {
+                                      hasDB2 = true
+                                    }
+                                  })
+                                }
+                                
+                                if (hasASCEND && hasDB2) {
+                                    ASCENDDB2_boxesCount += 1;
+                                    executedIn = 'ASCEND-DB2'
+                                  } else if (hasASCEND) {
+                                    ASCEND_boxesCount += 1;
+                                    executedIn = 'ASCEND'
+                                  } else if (hasDB2) {
+                                    DB2_boxesCount += 1;
+                                    executedIn = 'DB2'
+                                  } else {
+                                    unknown_boxesCount += 1;
+                                    executedIn = '?'
+                                  }
+                             } %>
+                          <td><%= this_process['$']['name'] %></td>
+                          <% if (this_process['$']['processType'] === 'TRIGGER') {this_process['$']['processType'] = 'SHELL' } %>
+                          <td><img style="max-height:30px; padding-right: 10px;" src="/task-icons/<%= this_process['$']['processType'].toLowerCase() %>_box2.png" alt="X"> <%= this_process['$']['processType'] %> [<%= executedIn %>]</td>
+                          <td><% if (this_process['$']['status'] == "Failed" || this_process['$']['status'] == "Failure Cancel" || this_process['$']['status'] == "Cancelled") { %> <i class="fa fa-times-circle" style="color:#FF0000;"></i>
+                            <% } else if (this_process['$']['status'] == "Completed" ) { %> <i class="fa fa-check-circle" style="color:#45c10b;"></i><% }
+                                 else if (this_process['$']['status'] == "Executing" ) { %> <i class="fa fa-cog" style="color:rgb(236, 195, 1)"></i><% }
+                                 else if (this_process['$']['status'] == "Executing Async" ) { %> <i class="fa fa-cogs" style="color:rgb(236, 195, 1)"></i><% }
+                                 else if (this_process['$']['status'] == "Waiting for Slot" ) { %> <i class="fa fa-hourglass-half" style="color:rgb(252, 110, 2)"></i><% }
+                                 else if (this_process['$']['status'] == "Waiting for Dependency" ) { %> <i class="fa fa-coffee" style="color:rgb(170, 132, 102)"></i><% }
+                                 else if (this_process['$']['status'] == "Hold" ) { %> <i class="fa fa-hand-stop-o" style="color:rgb(153, 153, 153)"></i><% }
+                                 else if (this_process['$']['status'] == "Hold For QA" ) { %> <i class="fa fa-search" style="color:rgb(48, 113, 211)"></i><% }
+                                 else {} %> <%= this_process['$']['status'] %></td>
+                          <td>N/A</td>
+                          <% if (this_process['$']['start'] == null) {%> <td></td> <% } else { %> 
+                          <td><%= this_process['$']['start'].substring(0, 10) + ' ' +  this_process['$']['start'].substring(11, 16)%></td>
+                          <% } %>
+                          <% if (this_process['$']['end'] == null) {%> <td></td> <% } else { %> 
+                          <td><%= this_process['$']['end'].substring(0, 10) + ' ' +  this_process['$']['end'].substring(11, 16)%></td>
+                          <% } %>
+                          <%if (this_process['$']['start'] != null && this_process['$']['end'] != null) {
+                            var startDate = new Date(this_process['$']['start']);
+                            var endDate = new Date(this_process['$']['end']);
+                            var elapsedHrs = Math.abs(endDate - startDate) / 36e5;%>
+                            <td><%=elapsedHrs.toFixed(2)%></td>
+                          <%} else { %>  
+                            <td>--</td>
+                          <% } %>
+                          <td><% if (typeof this_process['message'] !== "undefined") { %><%= this_process['message'] %><% } %></td>
+                        </tr>
+                        <% if (typeof this_process['output'] !== "undefined") { %>
+                          <% this_process['output'].forEach(function(this_output) { %>
+                          <tr>
+                            <td><%= this_output['$']['name'] %> <% if (typeof  this_output['SQL'] !== "undefined") {%><a type="button" data-toggle="modal" data-target="#sqlModal" data-sql="<%=this_output['SQL']%>"><i class="fa fa-plus-square" style="color: #007bff;"></i></a><%}%>
+                            </td>
+                            <td></td>
+                            <td><% if (this_output['$']['status'] == "Failed" || this_output['$']['status'] == "Failure Cancel" ||this_output['$']['status'] == "Cancelled") { %> <i class="fa fa-times-circle" style="color:#FF0000;"></i>
+                              <% } else if (this_output['$']['status'] == "Completed" ) { %> <i class="fa fa-check-circle" style="color:#45c10b;"></i><% }
+                                   else if (this_output['$']['status'] == "Executing" ) { %> <i class="fa fa-cog" style="color:rgb(236, 195, 1)"></i><% }
+                                   else if (this_output['$']['status'] == "Executing Async" ) { %> <i class="fa fa-cogs" style="color:rgb(236, 195, 1)"></i><% }
+                                   else if (this_output['$']['status'] == "Waiting for Slot" ) { %> <i class="fa fa-hourglass-half" style="color:rgb(252, 110, 2)"></i><% }
+                                   else if (this_output['$']['status'] == "Waiting for Dependency" ) { %> <i class="fa fa-coffee" style="color:rgb(170, 132, 102)"></i><% }
+                                   else if (this_output['$']['status'] == "Hold" ) { %> <i class="fa fa-hand-stop-o" style="color:rgb(153, 153, 153)"></i><% }
+                                   else if (this_output['$']['status'] == "Hold For QA" ) { %> <i class="fa fa-search" style="color:rgb(48, 113, 211)"></i><% }
+                                   else {} %> <%= this_output['$']['status'] %></td>
+                            <td><%= this_output['$']['recordCount'] %></td>
+                            <% if (this_output['$']['start'] == null) {%> <td></td> <% } else { %> 
+                            <td><%= this_output['$']['start'].substring(0, 10) + ' ' +  this_output['$']['start'].substring(11, 16)%></td>
+                            <% } %>
+                            <% if (this_output['$']['end'] == null) {%> <td></td> <% } else { %> 
+                            <td><%= this_output['$']['end'].substring(0, 10) + ' ' +  this_output['$']['end'].substring(11, 16)%></td>
+                            <% } %>
+                            <%if (this_output['$']['start'] != null && this_output['$']['end'] != null) {
+                              var startDate = new Date(this_output['$']['start']);
+                              var endDate = new Date(this_output['$']['end']);
+                              var elapsedHrs = Math.abs(endDate - startDate) / 36e5;%>
+                              <td><%=elapsedHrs.toFixed(2)%></td>
+                            <%} else { %>  
+                              <td>--</td>
+                            <% }  %>
+                            <td><%= this_output['$']['message'] %></td>
+                          </tr>
+                          <% }) %>
+                        <% } %>
+
+                      <% })%>   
+
+
+                  </tbody>
+              </table>    
+
+              
+
+                  </div>
+                </div>
+              </div>
+
+              
+              <% })%>
+
+              </div>
+
+              <div class="card" style="width: 40rem;">              
+                <div class="card-header">Execution Environment Stats</div>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+
+                        <thead class="thead-light">
+                            <th></th>
+                            <th>DB2</th>
+                            <th>ASCEND</th>
+                            <th>Hybrid</th>
+                            <th>Unknown</th>
+                            <th>Total</th>
+                        </thead>
+                        <tbody>
+                            <% var totalBoxes = DB2_boxesCount + ASCEND_boxesCount + ASCENDDB2_boxesCount + unknown_boxesCount%>
+                              <tr>
+                                <td>Boxes Count</td>
+                                <td><%=DB2_boxesCount%></td>
+                                <td><%=ASCEND_boxesCount%></td>
+                                <td><%=ASCENDDB2_boxesCount%></td>
+                                <td><%=unknown_boxesCount%></td>
+                                <td><%=totalBoxes%></td>
+                              </tr>
+                              <tr>
+                                <td>Percentage</td>
+                                <td><%= (DB2_boxesCount/totalBoxes * 100).toFixed(2)%> %</td>
+                                <td><%= (ASCEND_boxesCount/totalBoxes * 100).toFixed(2)%> %</td>
+                                <td><%= (ASCENDDB2_boxesCount/totalBoxes * 100).toFixed(2)%> %</td>
+                                <td><%= (unknown_boxesCount/totalBoxes * 100).toFixed(2)%> %</td>
+                                <td>100 %</td>
+                              </tr>
+                        </tbody>
+                      </table>
+                  </div>
+              </div>    
+            </div>
+
+            </div>
+          </div>
+        </div>
+    <% } %>
+  </main>
+
+<div class="modal fade" id="sqlModal" tabindex="-1" role="dialog" aria-labelledby="sqlModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" style="word-wrap: break-word; color:#96b5d5; font-size:70%">
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<% include ./footer %>
+
+<script>
+    $('#sqlModal').on('show.bs.modal', function (event) {
+      var button = $(event.relatedTarget) // Button that triggered the modal
+      var sqlText = button.data('sql').replace(/\n/g,'<br>')
+      var modal = $(this)
+      modal.find('.modal-body').html(sqlText)
+      });  
+</script>
+
+</body>
+</html>
+
+

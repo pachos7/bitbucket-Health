@@ -1,0 +1,97 @@
+<% include ./head %>
+<body>
+<% include ./header %>
+<main role="main" class="col-sm-9 ml-sm-auto col-md-10 pt-3">
+    <% if (campaignsList == null) { %>
+       <tr><td>No campaigns in execution found</td></tr>
+    <% } else {  %>
+        <p></p>
+        <% if (title !== null) { %>
+          <h3><%= title %></h3> 
+        <% }  %>
+        <div class="card">
+          <div class="card-body">
+             <div class="table-responsive">
+              <% var currentEnvironment = ''; 
+                 campaignsList.forEach(function(campaign) { 
+                   if (currentEnvironment === '') { 
+                       currentEnvironment = campaign.ENVIRONMENT; %>
+                       <h3><%= campaign.ENVIRONMENT %></h3> 
+                       <table class="table table-bordered table-sm" id="dataTable" width="100%" cellspacing="0">
+                       <thead class="thead-light"><th>Client</th><th>Program</th><th>Run Instance</th><th>DB2 Date</th><th>ASCEND Date</th><th>Type</th><th>Process Name</th><th>Start</th></tr></thead>
+                       <tbody>
+                        <tr>
+                          <td style="width: 15%"><a href="/campaign/getAccountsByClient/<%= campaign.CLIENT_NAME %>"><%= campaign.CLIENT_NAME %></a></td>
+                          <td style="width: 25%"><a href="/campaign/getCampaignDetails/<%= campaign.CAMPAIGN_NAME %>"><%= campaign.CAMPAIGN_NAME %></a></td>
+                          <td><a href="/campaign/getRunInstanceDetails/<% if (campaign.CAMPAIGN_NAME.startsWith("[UAT]")) {%>[UAT]<%}%><%= campaign.RUN_INSTANCE_ID %>"><%= campaign.RUN_INSTANCE_ID %></a></td>
+                          <td><%= campaign.DB2_TRADE_BASE_DT %></td>
+                          <td><%= campaign.ASCEND_TRADE_BASE_DT %></td>
+                          <% if (campaign.PROCESS_TYPE === 'TRIGGER') {campaign.PROCESS_TYPE = 'SHELL' } %>
+                          <td><% if (campaign.PROCESS_TYPE === 'DELIVER' || campaign.PROCESS_TYPE === 'FORMAT'|| campaign.PROCESS_TYPE === 'EXPORTTOASCEND' ) { %><i class="fa fa-cloud" style="color:rgb(9, 137, 187)"></i><% } %>
+                              <% if (campaign.PROCESS_STATUS === "Executing") { %><i class="fa fa-cog" style="color:rgb(236, 195, 1)"></i><%} 
+                                else if (campaign.PROCESS_STATUS === "Waiting for Slot") { %><i class="fa fa-hourglass-half" style="color:rgb(252, 110, 2)"></i><%} 
+                            else { %><i class="fa fa-cogs" style="color:rgb(109, 109, 109)"></i><%}%> <%= campaign.PROCESS_TYPE %></td>
+                          <td><%= campaign.PROCESS_NAME %></td>
+                          <% if (campaign.PROCESS_START == null) { %>
+                            <td>--</td>
+                            <% } else { %>
+                              <td><%=campaign.PROCESS_START.substring(0, 10) + ' ' +  campaign.PROCESS_START.substring(11, 16)%></td>
+                           <% }  %>
+                        </tr>
+                  <% } else if (currentEnvironment !==  campaign.ENVIRONMENT) { 
+                      currentEnvironment = campaign.ENVIRONMENT; %>
+                      </tbody>
+                      </table>  
+                      <h3><%= campaign.ENVIRONMENT %></h3> 
+                      <table class="table table-bordered table-sm" id="dataTable" width="100%" cellspacing="0">
+                      <thead class="thead-light"><th>Client</th><th>Program</th><th>Run Instance</th><th>DB2 Date</th><th>ASCEND Date</th><th>Type</th><th>Process Name</th><th>Start</th></tr></thead>
+                      <tbody>
+                       <tr>
+                        <td style="width: 15%"><a href="/campaign/getAccountsByClient/<%= campaign.CLIENT_NAME %>"><%= campaign.CLIENT_NAME %></a></td>
+                         <td style="width: 25%"><a href="/campaign/getCampaignDetails/<%= campaign.CAMPAIGN_NAME %>"><%= campaign.CAMPAIGN_NAME %></a></td>
+                         <td><a href="/campaign/getRunInstanceDetails/<% if (campaign.CAMPAIGN_NAME.startsWith("[UAT]")) {%>[UAT]<%}%><%= campaign.RUN_INSTANCE_ID %>"><%= campaign.RUN_INSTANCE_ID %></a></td>
+                         <td><%= campaign.DB2_TRADE_BASE_DT %></td>
+                         <td><%= campaign.ASCEND_TRADE_BASE_DT %></td>
+                         <% if (campaign.PROCESS_TYPE === 'TRIGGER') {campaign.PROCESS_TYPE = 'SHELL' } %>
+                         <td><% if (campaign.PROCESS_TYPE === 'DELIVER' || campaign.PROCESS_TYPE === 'FORMAT'|| campaign.PROCESS_TYPE === 'EXPORTTOASCEND' ) { %><i class="fa fa-cloud" style="color:rgb(9, 137, 187)"></i><% } %>
+                             <% if (campaign.PROCESS_STATUS === "Executing") { %><i class="fa fa-cog" style="color:rgb(236, 195, 1)"></i><%} 
+                              else if (campaign.PROCESS_STATUS === "Waiting for Slot") { %><i class="fa fa-hourglass-half" style="color:rgb(252, 110, 2)"></i><%} 
+                          else { %><i class="fa fa-cogs" style="color:rgb(109, 109, 109)"></i><%}%> <%= campaign.PROCESS_TYPE %></td>
+                        <td><%= campaign.PROCESS_NAME %></td>
+                         <% if (campaign.PROCESS_START == null) { %>
+                          <td>--</td>
+                          <% } else { %>
+                            <td><%=campaign.PROCESS_START.substring(0, 10) + ' ' +  campaign.PROCESS_START.substring(11, 16)%></td>
+                         <% }  %>
+                        </tr>        
+                      <% } else { %>
+            	   <tr>
+                <td style="width: 15%"><a href="/campaign/getAccountsByClient/<%= campaign.CLIENT_NAME %>"><%= campaign.CLIENT_NAME %></a></td>
+                <td style="width: 25%"><a href="/campaign/getCampaignDetails/<%= campaign.CAMPAIGN_NAME %>"><%= campaign.CAMPAIGN_NAME %></a></td>
+                <td><a href="/campaign/getRunInstanceDetails/<% if (campaign.CAMPAIGN_NAME.startsWith("[UAT]")) {%>[UAT]<%}%><%= campaign.RUN_INSTANCE_ID %>"><%= campaign.RUN_INSTANCE_ID %></a></td>
+                <td><%= campaign.DB2_TRADE_BASE_DT %></td>
+                <td><%= campaign.ASCEND_TRADE_BASE_DT %></td>
+                <% if (campaign.PROCESS_TYPE === 'TRIGGER') {campaign.PROCESS_TYPE = 'SHELL' } %>
+                <td><% if (campaign.PROCESS_TYPE === 'DELIVER' || campaign.PROCESS_TYPE === 'FORMAT'|| campaign.PROCESS_TYPE === 'EXPORTTOASCEND' ) { %><i class="fa fa-cloud" style="color:rgb(9, 137, 187)"></i><% } %>
+                    <% if (campaign.PROCESS_STATUS === "Executing") { %><i class="fa fa-cog" style="color:rgb(236, 195, 1)"></i><%} 
+                      else if (campaign.PROCESS_STATUS === "Waiting for Slot") { %><i class="fa fa-hourglass-half" style="color:rgb(252, 110, 2)"></i><%} 
+                  else { %><i class="fa fa-cogs" style="color:rgb(109, 109, 109)"></i><%}%> <%= campaign.PROCESS_TYPE %></td>
+                <td><%= campaign.PROCESS_NAME %></td>
+                <% if (campaign.PROCESS_START == null) { %>
+                  <td>--</td>
+                 <% } else { %>
+                    <td><%=campaign.PROCESS_START.substring(0, 10) + ' ' +  campaign.PROCESS_START.substring(11, 16)%></td>
+                 <% }  %>
+               </tr>
+              <% } %>
+            	<% });%>
+              </tbody>
+              </table>            
+            </div>
+          </div>
+        </div>
+    <% } %>
+  </main>
+<% include ./footer %>
+</body>
+</html>

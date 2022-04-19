@@ -1,0 +1,153 @@
+<% include ./head %>
+<body>
+<style>  
+.inner {
+  width: 50%;
+  margin: 0 auto;
+}
+</style>  
+<% include ./header %>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.0/chart.min.js"></script> 
+<main role="main" class="col-sm-9 ml-sm-auto col-md-10 pt-3">
+  <h1>Dashboard <% if (locals.pulse) { %> - <%=pulse[0].DATE%><%}%></h1>
+  <% if (typeof message === 'undefined' || message === null) {
+    // variable is undefined or null
+  } else { %>
+    <div class="alert alert-info" role="alert"><%= message%></div>
+  <% } %>
+
+
+
+  <section>
+    <div class="card col-sm-12">
+      <div class="card-body">
+        <canvas id="spaceChart-1"></canvas>                                                                
+    </div>    
+  </div>
+  </section>
+
+  <% if (locals.pulse) { 
+    labelsDB       = ""
+    orjobsData     = []
+    otherSpaceData = []
+    freeeSpaceData = []
+
+    pulse.forEach(function(thisPulse) { 
+      labelsDB += "'" + thisPulse.ENVIRONMENT + "'," ;
+      orjobsData.push(thisPulse.DB_ORJOBS_SIZE);
+      otherSpaceData.push((thisPulse.DB_SPACE_USED - thisPulse.DB_ORJOBS_SIZE).toFixed(2));
+      freeeSpaceData.push((thisPulse.DB_TOTAL_SPACE - thisPulse.DB_SPACE_USED).toFixed(2));
+    }); 
+    %>
+  
+  <script>
+    var ctx = document.getElementById('spaceChart-1').getContext('2d');
+    ctx.height =  350;
+    var myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: [<%- labelsDB %>],
+        datasets: [
+          { label: 'ORJOBS01',    data: [<%- orjobsData %>],      backgroundColor: '#045EC2',  },
+          { label: 'Other Used',  data: [<%- otherSpaceData %>],  backgroundColor: '#077ACE',  },
+          { label: 'Free',        data: [<%- freeeSpaceData %>],  backgroundColor: '#D4CCC7',  }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right'
+          }
+        },
+      }
+    });
+  </script>
+
+<% } %>
+
+  <section>
+    <div class="card col-sm-12">
+      <div class="card-body">                                                                
+         <table id="spaceInfoTable-1" class="table table-hover table-sm">
+            <thead class="thead-light" >
+              <tr>
+                <th style="text-align:left">Database</th>
+                <th style="text-align:right">Size (TB)</th>
+                <th style="text-align:right">Used (TB)</th>
+                <th style="text-align:right">ORJOBS01 (TB)</th>
+                <th style="text-align:right">Avg. node use</th>
+                <th style="text-align:right">Max node</th>
+                <th style="text-align:right">Max node name</th>
+              </tr>
+             </thead>
+            <tbody>
+              <% if (locals.pulse) { 
+                pulse.forEach(function(thisPulse) { %>
+                <tr>
+                  <td style="text-align:left"><%=thisPulse.ENVIRONMENT%></td>
+                  <td style="text-align:right"><%=thisPulse.DB_TOTAL_SPACE%></td>
+                  <td style="text-align:right"><%=thisPulse.DB_SPACE_USED%></td>
+                  <td style="text-align:right"><%=thisPulse.DB_ORJOBS_SIZE%></td>
+                  <td style="text-align:right" <% if (thisPulse.DB_AVG_SPACE_USE >= 90) {%> class="table-danger" <% } %>><%=thisPulse.DB_AVG_SPACE_USE%>%</td>
+                  <td style="text-align:right" <% if (thisPulse.DB_MAX_NODE_USAGE >= 90) {%> class="table-danger" <% } %>><%=thisPulse.DB_MAX_NODE_USAGE%>%</td>
+                  <td style="text-align:right"><%=thisPulse.DB_MAX_PCT_NODE_NAME%></td>
+                </tr>
+                <% }); %>
+              <% };%>
+            </tbody>
+          </table>
+    </div>    
+  </div>
+  </section>
+
+  <% if (locals.NASInfo) { %>
+    <% 
+       var NASDataLabels = "";
+       var NASDataSize = [];
+       var NASDataAvail = [];
+       var NASDataUsed = [];
+       var NAS95pct = [];
+       NASInfo.forEach(function(thisVolume) { 
+         NASDataSize.push(thisVolume.size);
+         NASDataLabels += "'" + thisVolume.volumeID + "'," ;
+         NASDataAvail.push(thisVolume.avail);
+         NASDataUsed.push((thisVolume.size - thisVolume.avail).toFixed(2));
+         NAS95pct.push((thisVolume.size * 0.95).toFixed(2));
+       });
+    %>
+    
+  <section>
+    <div class="card col-sm-12" >
+       <div class="card-body">
+          <canvas id="NASChart" height="50"></canvas> 
+       </div>
+    </div>
+    <script>
+        var ctxNAS = document.getElementById("NASChart").getContext('2d');
+        var NASChart = new Chart(ctxNAS, {
+            type: 'line',
+            data: {labels:[<%- NASDataLabels %>],
+                   datasets:[{label:"Size",  data:[<%=NASDataSize%>],      fill:false, borderColor: '#D4CCC7',lineTension:0.1},
+                             {label:"95% Thereshold", data:[<%=NAS95pct%>],fill:false, borderColor:"rgb(255, 99, 132)",lineTension:0.1},
+                             {label:"Used", data:[<%=NASDataUsed%>],      fill:true,   borderColor:'#077ACE', backgroundColor: '#077ACE', lineTension:0.1}
+                             ]},
+			options: {
+               scales: {
+                   yAxes: [{
+                       ticks: {
+                           suggestedMin: 0
+                       }
+                   }]
+               }            
+            }
+        });
+        
+    </script>    
+  </section>
+  <% } %>
+</main>
+<% include ./footer %>
+</body>
+</html>
