@@ -51,13 +51,13 @@ oc label namespace tayrona appcanvas-v4-migration=true
     
     Decrypt Secret using python
     >>> import base64
-    >>> base64.b64decode("Q2xmcDM4ODEw").decode()
-    base64.b64decode("IUxwcXRwMTQ=").decode()
+    >>> base64.b64decode("???????").decode()
+    base64.b64decode("???????").decode()
 
     Encript Secret using python
     >>> import base64
-    >>> base64.b64encode(bytes("!Lpqtp41", "utf-8"))
-        base64.b64encode(bytes('!Lpqtp41'))
+    >>> base64.b64encode(bytes("???????", "utf-8"))
+        base64.b64encode(bytes('???????'))
        
   .-----------------------------------------------------------------.
  / /   \           System Monitoring                           /   \ \
@@ -78,18 +78,18 @@ What OSS needs to see:
 
 cd ~/Documents/GVAPCode/Tayrona
 export APP_USER=cc046fn
-export APP_LINUX_PASSWORD='!Lpqtp42'
-export APP_AIX_PASSWORD='!Lpqtp42'
+export APP_LINUX_PASSWORD='???????'
+export APP_AIX_PASSWORD='???????'
 export PORT=8085
 
 export APP_USER=dsopera
-export APP_LINUX_PASSWORD='12@aixdo'
-export APP_AIX_PASSWORD='12@aixdo'
+export APP_LINUX_PASSWORD='???????'
+export APP_AIX_PASSWORD='???????'
 export PORT=8085
 
   export APP_USER=atlasusr
-  export APP_LINUX_PASSWORD='45TfH68T'
-  export APP_AIX_PASSWORD='45TfH68T'
+  export APP_LINUX_PASSWORD='???????'
+  export APP_AIX_PASSWORD='???????'
   export PORT=8085
   export INSTANCE=PROD
 
