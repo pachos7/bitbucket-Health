@@ -1,0 +1,105 @@
+<% include ./head %>
+<body>
+<% include ./header %>
+<main role="main" class="col-sm-9 ml-sm-auto col-md-10 pt-3">
+    
+    <div class="card" style="width: 40rem;">
+      <div class="card-header">
+      <i class="fa fa-database fa-lg"></i> Space Details</div>
+      <div class="card-body">
+        <div class="table-responsive">
+        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+        <% if (environment != null) { %>
+           <tr><td>Environment</td><td><%= environment %></td></tr>
+        <% }; %>
+        <% if (filterType != null) { %>
+           <tr><td>Filtered By</td><td><%= filterType %></td></tr>
+        <% }; %>
+        <% if (filterValue != null) { %>
+           <tr><td>Filter Value</td><td><%= filterValue %></td></tr>
+        <% }; %>
+        <% if (totalSpace[0].total != null) { %>
+           <tr><td>Total Space</td><td><%= (totalSpace[0].total/1024).toFixed(2) %> Tb</td></tr>
+        <% }; %>
+        </table>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+    
+       <table id="appsTable" class="table table-hover table-sm">
+         <thead class="thead-light">
+   	        <tr>
+   	            <th>#</th>
+                <% if (summary == null) { %>
+                   <th style="text-align:center">Table Name</th>
+                   <th style="text-align:center">Created</th>
+                   <th style="text-align:center">Ops</th>
+                   <th style="text-align:center">Space(Gb)</th>
+                   <th style="text-align:center">Client Name</th>
+                   <th style="text-align:center">Campaign Name</th>
+                   <th style="text-align:center">Campaign Contact</th>
+                <% } else {%>
+                   <th style="text-align:center">Space(Gb)</th>
+                   <th class="absorbing-column" style="text-align:center"><%= filterType %> Name</th>
+                <% };%>   
+   	        </tr>
+          </thead>
+        <tbody>
+        <% spaceDetails.forEach(function(table, i) { %>
+           <tr>
+                <td><%= i + 1 %></td>
+                <% if (summary != null) { %>
+                  <td align="center"><%= table.SIZE_G %></td>
+                  <% if (table._id != null) { %>
+                     <td><a href='/space/getOrjobsSpaceByFilter/<%= environment %>/<%= filterType %>/<%= table._id %>'><%= table._id %></a></td>
+                  <% } else { %>
+                     <td><a href='/space/getOrjobsSpaceByFilter/<%= environment %>/<%= filterType %>/Unknown'>Unknown</a></td>
+                  <% }; %>
+                <% } else { %>  
+                    
+                       <td><%= table.TABLE_NAME %>
+                       <% if (table.DoNotDropTag != null) { %>  <span class="badge badge-secondary">Do Not Delete</span><% }; %>
+                       <a href='/table/getTableDetails/<%= table.TABLE_NAME %>'><i class="fa fa-plus-square"></i></a>
+                       </td>
+                       <td><%= table.CREATE_DATE %></td>
+                       <td>
+                       <% if (table.OPERATIONS != null) { 
+                            table.OPERATIONS.forEach(function(thisOp, i) { 
+                               if (thisOp.OPERATION !== "PURGE" ) {%>
+                                 <span class="badge badge-pill badge-secondary <% if (thisOp.STATUS === "COMPLETED") { %> badge-success <% } else if (thisOp.STATUS === "PROCESSING") { %> badge-info <% } else if (thisOp.STATUS === "FAILED" || thisOp.STATUS === "CANCEL") { %> badge-danger <% } else if (thisOp.OPERATION === "DELETE") { %> badge-warning <% } %> " data-toggle="tooltip" data-placement="top" title="Operation <% if (thisOp.STATUS === "COMPLETED") { %>completed on <% } else if (thisOp.STATUS === "PROCESSING") { %>Processing in progress <% } else if (thisOp.STATUS === "CANCEL") { %>cancelled on <% } else { %>Scheduled for <% } %><%=thisOp.REQUEST_TS.substring(0,10)%>"><%=thisOp.OPERATION[0]%></span>
+                               <% } %>
+                            <% }); %>
+                       <% } %>
+                       </td>
+                       
+                    
+                    <td align="center"><%= table.SIZE_G %></td>
+                    <td>
+                    <% if (table.CLIENT_NAME == null) { %>
+                       <a href='/space/getOrjobsSpaceByFilter/<%= environment %>/Client/Unknown'>Unknown</a>
+                    <% } else { %>
+                       <a href='/space/getOrjobsSpaceByFilter/<%= environment %>/Client/<%= table.CLIENT_NAME %>'><%= table.CLIENT_NAME %></a>
+                    <% }; %>
+                    </td>
+                    <% if (table.CAMPAIGN_NAME != null) { %>
+                      <td><a href='/space/getOrjobsSpaceByFilter/<%= environment %>/Campaign/<%= table.CAMPAIGN_NAME %>'><%= table.CAMPAIGN_NAME %></a>
+                          <a href='/campaign/getCampaignDetails/<%= table.CAMPAIGN_NAME %>'><i class="fa fa-plus-square"></i></a></td>
+                    <% } else { %>
+                      <td></td>
+                    <% }; %>
+                    <td><%= table.USER_NAME %></td>
+                <% }; %>
+            </tr>
+        <% }); %>
+       </tbody>
+       </table>
+       </div>
+      </div>
+    </div>
+</main>
+<% include ./footer %>
+</body>
+</html>

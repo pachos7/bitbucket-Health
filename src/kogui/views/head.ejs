@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="/favicon.png" />
+
+  <title>Tayrona</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" >
+<style>
+/* Move down content because we have a fixed navbar that is 3.5rem tall */
+body {
+  padding-top: 3.5rem;
+}
+
+/*
+ * Typography
+ */
+
+h1 {
+  padding-bottom: 9px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+/*
+ * Sidebar
+ */
+
+.sidebar {
+  position: fixed;
+  top: 51px;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 20px 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+  border-right: 1px solid #eee;
+  font-family: verdana;
+  font-size: 12px;
+  font-weight: 200;
+  background-color: #2e353d;
+  color: #e1ffff;
+  height: 100%;
+}
+
+.sidebar .toggle-btn {
+  display: none;
+}
+
+.sidebar ul,
+.sidebar li {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+  line-height: 35px;
+  cursor: pointer;
+      
+    .collapsed{
+       .arrow:before{
+                 font-family: FontAwesome;
+                 content: "\f053";
+                 display: inline-block;
+                 padding-left:10px;
+                 padding-right: 10px;
+                 vertical-align: middle;
+                 float:right;
+            }
+     }
+}
+
+.sidebar .nav {
+  margin-bottom: 20px;
+}
+
+.sidebar .nav-item {
+  width: 100%;
+}
+
+.sidebar .nav-item + .nav-item {
+  margin-left: 0;
+}
+
+.sidebar .nav-link {
+  border-radius: 0;
+}
+
+.sidebar ul :not(collapsed) .arrow:before,
+.sidebar li :not(collapsed) .arrow:before {
+  font-family: FontAwesome;
+  content: "\f078";
+  display: inline-block;
+  padding-left: 10px;
+  padding-right: 10px;
+  vertical-align: middle;
+  float: right;
+}
+
+.sidebar ul .active,
+.sidebar li .active {
+  border-left: 3px solid #d19b3d;
+  background-color: #4f5b69;
+}
+
+.sidebar ul .sub-menu li.active,
+.sidebar li .sub-menu li.active {
+  color: #d19b3d;
+}
+.sidebar ul .sub-menu li.active a,
+.sidebar li .sub-menu li.active a {
+  color: #d19b3d;
+}
+
+.sidebar ul .sub-menu li,
+.sidebar li .sub-menu li {
+  background-color: #181c20;
+  border: none;
+  line-height: 28px;
+  border-bottom: 1px solid #23282e;
+  margin-left: 0px;
+}
+.sidebar ul .sub-menu li:hover,
+.sidebar li .sub-menu li:hover {
+  background-color: #020203;
+}
+.sidebar ul .sub-menu li:before,
+.sidebar li .sub-menu li:before {
+  font-family: FontAwesome;
+  content: "\f105";
+  display: inline-block;
+  padding-left: 10px;
+  padding-right: 10px;
+  vertical-align: middle;
+}
+.sidebar li {
+  padding-left: 0px;
+  border-left: 3px solid #2e353d;
+  border-bottom: 1px solid #23282e;
+}
+.sidebar li a {
+  text-decoration: none;
+  color: #e1ffff;
+}
+
+.sidebar ul .sub-menu li a {
+  color: #e1ffff;
+}
+
+.sidebar ul .sub-menu-2 li a {
+  color: #bb9bbb;
+}
+
+.sidebar ul .sub-menu-2 {
+  padding-left: 10px;
+  margin-left: 20px;
+}
+
+.sidebar li a i {
+  padding-left: 10px;
+  width: 20px;
+  padding-right: 20px;
+}
+.sidebar li:hover {
+  border-left: 3px solid #d19b3d;
+  background-color: #4f5b69;
+  -webkit-transition: all 1s ease;
+  -moz-transition: all 1s ease;
+  -o-transition: all 1s ease;
+  -ms-transition: all 1s ease;
+  transition: all 1s ease;
+}
+
+.table {
+  table-layout: auto;
+}
+.table td {
+  padding: .1rem;
+}
+
+table .absorbing-column {
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    position: relative;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .sidebar .toggle-btn {
+    display: block;
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 10 !important;
+    padding: 3px;
+    background-color: #ffffff;
+    color: #000;
+    width: 40px;
+    text-align: center;
+  }
+  .brand {
+    text-align: left !important;
+    font-size: 22px;
+    padding-left: 20px;
+    line-height: 50px !important;
+  }
+}
+@media (min-width: 767px) {
+  .sidebar .menu-list .menu-content {
+    display: block;
+  }
+  #main {
+  	width:calc(100% - 300px);
+  	float: right;
+  }
+}
+
+/*
+ * Dashboard
+ */
+
+/* Placeholders */
+.placeholders {
+  padding-bottom: 3rem;
+}
+
+.placeholder img {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+</style>  
+</head>
+
+

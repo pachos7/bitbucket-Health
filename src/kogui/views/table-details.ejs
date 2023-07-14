@@ -1,0 +1,73 @@
+<% include ./head %>
+<body>
+<% include ./header %>
+<main role="main" class="col-sm-9 ml-sm-auto col-md-10 pt-3">
+    <% if (tableInfo == null) { %>
+    <tr><td>No information found for table: <% if (tableName != null) { %><%= tableName %><% } %> </td></tr>
+    <% } else {  %>
+        <div class="card" style="width: 40rem;">
+          <div class="card-header">
+          <i class="fa fa-table"></i> Table Details</div>
+          <div class="card-body">
+            <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+            <tr><td>Table Name</td><td><%= tableInfo.TABLE_NAME %><% if (tableInfo.DoNotDropTag != null) { %>  <span class="badge badge-secondary">Do Not Delete</span><% }; %></td></tr>
+            <tr><td>Environment</td><td><%= tableInfo.ENVIRONMENT %></td></tr>
+            <tr><td>Size (Gb)</td><td><%= tableInfo.SIZE_G %></td></tr>
+            <% if (tableInfo.CAMPAIGN_NAME != null) { %><tr><td>Campaign Name</td><td><%= tableInfo.CAMPAIGN_NAME %></td></tr><% } %>
+            <% if (tableInfo.CLIENT_NAME != null) { %><tr><td>Client Name</td><td><%= tableInfo.CLIENT_NAME %></td></tr><% } %>
+            <% if (tableInfo.ACCOUNT != null) { %><tr><td>Account</td><td><%= tableInfo.ACCOUNT %></td></tr><% } %>
+            <% if (tableInfo.CAMPAIGN_ID != null) { %><tr><td>Campaign ID</td><td><%= tableInfo.CAMPAIGN_ID %></td></tr><% } %>
+            <% if (tableInfo.CAMPAIGN_CD != null) { %><tr><td>Campaign Code</td><td><%= tableInfo.CAMPAIGN_CD %></td></tr><% } %>
+            <% if (tableInfo.USER_NAME != null) { %><tr><td>Last Updated by</td><td><%= tableInfo.USER_NAME %></td></tr><% } %>
+            </table>
+            </div>
+          </div>
+        </div>
+        <p></p>
+        <div class="card">
+          <div class="card-body">
+             <div class="table-responsive">
+               <% if (tableInfo.OPERATIONS == null) { %>
+               <p>No Operations information found</p>
+               <% } else {  %>
+               <table class="table table-bordered table-sm" id="dataTable" width="100%" cellspacing="0">
+                 <thead class="thead-light">
+           	     <tr>
+           	       <th>#</th>
+           	       <th>Request TimeStamp</th>
+           	       <th>Operation</th>
+                   <th>Status</th>
+           	     </tr>
+                 </thead>
+                 <tbody>
+                <% tableInfo.OPERATIONS.forEach(function(operation, i) { %>
+            	<tr>
+            	  <td><%= i + 1 %></td>
+                  <%var requestTS = new Date(operation.REQUEST_TS);%>
+                  <td><%= requestTS.toLocaleString() %></td>
+                  <td><%= operation.OPERATION %></td>
+                  <td><% if (operation.STATUS == "FAILED" || operation.STATUS == "CANCEL") { %> <i class="fa fa-times-circle" style="color:#FF0000;"></i>
+                      <% } else if (operation.STATUS == "PROCESSING" ) { %> <i class="fa fa-check-circle" style="color:#eccb0b;"></i>
+                      <% } else if (operation.STATUS == "COMPLETED" ) { %> <i class="fa fa-check-circle" style="color:#45c10b;"></i>
+                      <% } else if (operation.STATUS == "WAITING HK" ) { %> <i class="fa fa-clock-o" style="color:#0a8ac1;"></i><% } %>
+                      <%= operation.STATUS %>
+                  </td>
+            	</tr>
+            	<% });%>
+                <% };%>  
+                </tbody>
+              </table>    
+              <% if (tableName != null) { %> 
+                <a href="/table/updateTableOperationsInfo/<%= tableName %>">
+                <button class="btn btn-dark ">Update Table  Operations details</button>
+                </a>
+                <% } %>
+            </div>
+          </div>
+        </div>
+    <% } %>
+</main>
+<% include ./footer %>
+</body>
+</html>

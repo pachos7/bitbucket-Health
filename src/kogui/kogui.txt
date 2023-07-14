@@ -1,0 +1,138 @@
+  
+  .-----------------------------------------------------------------.
+ / /   \           *To Update Remote database*                 /   \ \
+ \|  | /-------------------------------------------------------\  | |/
+  `---'                                                         `---'
+
+    * Start mongo 
+      mongod --dbpath=/Users/$(whoami)/data/db
+      mkdir -p /Users/$(whoami)/data/db
+
+    * Export MongoDB
+        C:\mongodb\bin\mongodump -d tayronadb -o C:\Users\CC046FN\Desktop\tayrona\mongoDataImport\tayronadbdump
+        mongodump -d tayronadb -o ~/Documents/GVAP\ Sunset/tayrona/mongoDataImport/tayronadbdump
+
+    *Loging to OC to upload files*
+      https://console.appcanvas.net:8443/oauth/token/request
+      oc project tayrona
+      oc get pods
+      oc rsync ~/Documents/GVAP\ Sunset/tayrona/mongoDataImport/tayronadbdump mongodb-9-cg8jn:/var/lib/mongodb/
+      
+      oc rsh mongodb-9-cg8jn
+
+    * Restore MongoDB in PaaS*
+      mongorestore --username $MONGODB_USER --password $MONGODB_PASSWORD --drop -d tayronadb /var/lib/mongodb/tayronadbdump/tayronadb/
+
+    *Remote conection to mongo 
+    oc port-forward mongodb-2-jfw2s 34000:27017
+    -- local setup: https://stackoverflow.com/questions/46501796/connect-to-openshift-3-mongodb-from-remote
+    
+    Type: Direct Connection
+		Name: OpenShift MongoDB Instance
+		addressess: localhost : 34000
+		And on Authentication tab...
+		Perform authentication: checked
+		Database: admin
+		Username: admin
+		Password: [ your database-admin-password ]
+		Auth Mechanism:
+		SCRAM-SHA-1
+
+
+oc label namespace tayrona appcanvas-v4-migration=true
+
+  .-----------------------------------------------------------------.
+ / /   \           *Secrets Management *                       /   \ \
+ \|  | /-------------------------------------------------------\  | |/
+  `---'                                                         `---'
+    oc describe secret nodejs-mongo-persistent
+    oc get secret -o yaml
+    oc get secret -o yaml | grep gvapmetadata-password
+    
+    Decrypt Secret using python
+    >>> import base64
+    >>> base64.b64decode("???????").decode()
+    base64.b64decode("???????").decode()
+
+    Encript Secret using python
+    >>> import base64
+    >>> base64.b64encode(bytes("???????", "utf-8"))
+        base64.b64encode(bytes('???????'))
+       
+  .-----------------------------------------------------------------.
+ / /   \           System Monitoring                           /   \ \
+ \|  | /-------------------------------------------------------\  | |/
+  `---'                                                         `---'
+
+What OSS needs to see:
+    1.  The workload on the system,
+    2.  % of system resources used and available, and by resource type, such as cpu, server, storage, file system, etc.
+    3.  A detail level view of the workload on the system, i.e. queries, jobs, file build activity, etc.
+    4.  Problems or issues on a system, server etc. such as deadlocks, file system full, stuck or hung queries, processes, etc.?  
+
+
+  .-----------------------------------------------------------------.
+ / /   \           *  Other...  *                              /   \ \
+ \|  | /-------------------------------------------------------\  | |/
+  `---'                                                         `---'   
+
+cd ~/Documents/GVAPCode/Tayrona
+export APP_USER=cc046fn
+export APP_LINUX_PASSWORD='???????'
+export APP_AIX_PASSWORD='???????'
+export PORT=8085
+
+export APP_USER=dsopera
+export APP_LINUX_PASSWORD='???????'
+export APP_AIX_PASSWORD='???????'
+export PORT=8085
+
+  export APP_USER=atlasusr
+  export APP_LINUX_PASSWORD='???????'
+  export APP_AIX_PASSWORD='???????'
+  export PORT=8085
+  export INSTANCE=PROD
+
+node server
+
+
+cd ~/Documents/GVAPCode/Tayrona
+
+docker-compose build 
+docker-compose up
+
+oc get deployments -n <your project> -o wide
+oc get deployments -n  -o wide
+
+ ---------  Backlog ----------------------------------------------
+
+T. Add check the backend servers check to Tayrona df24/apps/bin/showjb
+
+T. Find out if there are multiple instances of a table (with different environment), if so we could change the update many by single update and add the environmenr to the update parameter
+
+T. Change the campaing search links to use the campaing ID instead of the campaing name to avoid collision with different campaings of the same name
+
+T. Add ability to see status of regular exports and data transfers
+  df24 ps -fea |grep -i datatransfer
+  df22:/ds/dsadm/DSScripts/CBO/DataTransferNew/work/Queues
+  df22:tail -100f /ds/dsadm/DSScripts/CBO/DataTransferNew/Log/session.log
+
+
+T. Show campaing diagram
+  T. Create new Diagram view
+     list tasks in the top
+      on select task show diagram
+      
+
+
+T. Show delivery dashboard
+
+T. Show the exports status
+
+T. Show boxes count
+   Show counts of tasks in ASCNED|DB2 and hybrid
+   Show Total percentage of ascend execution (ASCEND Usage indicator)
+
+T. Fix Segmentation icons
+
+

@@ -1,0 +1,53 @@
+<% include ./head %>
+<body>
+<% include ./header %>
+<main role="main" class="col-sm-9 ml-sm-auto col-md-10 pt-3">
+    <% if (buildInfo == null) { %>
+       <tr><td>No OnGoing Build details found</td></tr>
+    <% } else {  %>
+        <div class="card">
+          <div class="card-body">
+            <div class="form-outline">
+              <h3><%= logFileName %></h3> 
+              <textarea disabled class="form-control" id="logTextArea" rows="10" wrap="off" style="background-color:#292f35;color:#34ff1d;font-size: 11px; font-family: 'Courier New', monospace;"><% buildInfo.forEach(function(logLine) { %><%= logLine %>&#013;&#010;<% }) %>
+              </textarea>
+            </div>
+            <% if (typeof dashboardInfo !== "undefined") { %>
+              <div class="form-outline">
+                <h3>Dashboard</h3> 
+                <div class="table-responsive">
+                  <table class="tree table table-bordered table-sm" id="dataTable" width="100%" cellspacing="0">
+                      <thead class="thead-light">
+                        <th>Date Time</th>
+                        <th>Flavor</th>
+                        <th>PostETL</th>
+                        <th>SwitchViews</th>
+                        <th>Time</th>
+                      </thead>
+                      <tbody>
+                        <% dashboardInfo.forEach(function(logLine) { %>
+                          <tr>
+                            <td><%= logLine[2] %></td>
+                            <td><%= logLine[4] %></td>
+                            <td <% if (logLine[0] == 'WED') {%> class="table-warning" <% } 
+                              else if (logLine[0] == 'SAT') {%> class="table-success" <% } 
+                              else if (logLine[0] == 'FULLMERGE') {%> class="table-secondary" <% } 
+                              else if (logLine[0] == 'NEWCONSUMER') {%> class="table-primary" <% } %> 
+                              ><%= logLine[0] %></td>
+                            <td><%= logLine[1] %></td>
+                            <td><%= logLine[3] %></td>
+                          </tr>
+                        <% }) %>
+                      </tbody>
+                  </table>            
+                </div> 
+              </div>
+            <% } %>
+          </div>
+        </div>
+    <% } %>
+  </main>
+<% include ./footer %>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+<% include ./head %>
+<body>
+<style>  
+.inner {
+  width: 50%;
+  margin: 0 auto;
+}
+</style>  
+<% include ./header %>
+<main role="main" class="col-sm-9 ml-sm-auto col-md-10 pt-3">
+  <h1><i class="fa fa-bomb fa-lg"></i> Oops, Something went wrong</h1>
+  <% if (typeof message === 'undefined' || message === null) {
+    // variable is undefined or null
+  } else { %>
+    <div class="alert alert-danger" role="alert"><%= message%></div>
+  <% } %>
+</main>
+<% include ./footer %>
+</body>
+</html>
